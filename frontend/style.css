@@ -702,3 +702,185 @@ body {
     font-size: 18px;
   }
 }
+
+/* Add this at the end of your existing style.css */
+
+/* Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+  }
+
+  .chat-container {
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+  }
+
+  .chat-header {
+    padding: 12px 16px;
+    border-radius: 0;
+  }
+
+  .bot-name {
+    font-size: 16px;
+  }
+
+  .status {
+    font-size: 12px;
+  }
+
+  .avatar {
+    width: 42px;
+    height: 42px;
+    font-size: 24px;
+  }
+
+  .header-right {
+    gap: 6px;
+  }
+
+  .icon-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .chat-box {
+    padding: 16px 12px;
+  }
+
+  .message {
+    max-width: 85%;
+    font-size: 14px;
+    padding: 12px 14px;
+  }
+
+  .chat-input {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+
+  .chat-input input {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+
+  .welcome-message h2 {
+    font-size: 24px;
+  }
+
+  .welcome-message p {
+    font-size: 14px;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+    padding: 0 20px;
+  }
+
+  .quick-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .settings-panel {
+    width: calc(100vw - 32px);
+    right: 16px;
+    left: 16px;
+  }
+
+  /* Fix viewport height for mobile browsers */
+  .chat-container {
+    height: 100dvh; /* Dynamic viewport height */
+  }
+
+  /* Prevent zoom on input focus */
+  input {
+    font-size: 16px !important;
+  }
+
+  /* Better scrolling on mobile */
+  .chat-box {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .header-left {
+    gap: 10px;
+  }
+
+  .bot-name {
+    font-size: 15px;
+  }
+
+  .status {
+    font-size: 11px;
+  }
+
+  .avatar {
+    width: 38px;
+    height: 38px;
+    font-size: 20px;
+  }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+
+  .message {
+    max-width: 90%;
+    font-size: 13px;
+    padding: 10px 12px;
+  }
+
+  .chat-input {
+    padding: 10px 12px;
+  }
+
+  .chat-input input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .send-btn {
+    width: 42px;
+    height: 42px;
+  }
+
+  .typing-indicator {
+    margin: 0 12px 8px 12px;
+    padding: 10px 16px;
+    font-size: 12px;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-width: 768px) and (orientation: landscape) {
+  .chat-container {
+    height: 100vh;
+  }
+
+  .chat-header {
+    padding: 8px 12px;
+  }
+
+  .welcome-message {
+    padding: 20px 16px;
+  }
+}
