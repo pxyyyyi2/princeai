@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prince AI - Chat Logs</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Courier New', monospace;
+    }
+
+    body {
+      background: #0f0f1a;
+      color: #fff;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      background: linear-gradient(135deg, #7b5cff, #b36bff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      font-size: 32px;
+      margin-bottom: 30px;
+    }
+
+    .controls {
+      background: #151528;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      color: #a0a0c0;
+    }
+
+    .controls select, .controls input {
+      padding: 10px 15px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #1e1e38;
+      color: #fff;
+      font-size: 14px;
+    }
+
+    .controls button {
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #7b5cff, #b36bff);
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+
+    .controls button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(123, 92, 255, 0.4);
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .stat-card {
+      background: #151528;
+      padding: 15px 20px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      flex: 1;
+      min-width: 150px;
+    }
+
+    .stat-card h3 {
+      color: #a0a0c0;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .stat-card p {
+      color: #7b5cff;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    .logs-container {
+      background: #151528;
+      padding: 25px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      max-height: 600px;
+      overflow-y: auto;
+    }
+
+    .log-entry {
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #1e1e38;
+      border-radius: 8px;
+      border-left: 4px solid #7b5cff;
+    }
+
+    .log-entry.user {
+      border-left-color: #4ade80;
+    }
+
+    .log-entry.error {
+      border-left-color: #ef4444;
+    }
+
+    .log-meta {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      color: #a0a0c0;
+    }
+
+    .log-meta span {
+      background: #0f0f1a;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .log-message {
+      color: #eaeaff;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #a0a0c0;
+    }
+
+    .logs-container::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .logs-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .logs-container::-webkit-scrollbar-thumb {
+      background: #7b5cff;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Prince AI - Chat Logs</h1>
+
+    <div class="controls">
+      <label>Select Date:</label>
+      <input type="date" id="dateInput" />
+      
+      <label>Log File:</label>
+      <select id="fileSelect">
+        <option value="">Select a log file...</option>
+      </select>
+
+      <button onclick="loadLogs()">🔍 Load Logs</button>
+      <button onclick="refreshLogs()">🔄 Refresh</button>
+      <button onclick="downloadLogs()">📥 Download</button>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card">
+        <h3>Total Messages</h3>
+        <p id="totalMessages">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>User Messages</h3>
+        <p id="userMessages">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Bot Responses</h3>
+        <p id="botMessages">0</p>
+      </div>
+      <div class="stat-card">
+        <h3>Current Date</h3>
+        <p id="currentDate" style="font-size: 16px;">-</p>
+      </div>
+    </div>
+
+    <div class="logs-container" id="logsContainer">
+      <div class="empty-state">
+        <div>📝</div>
+        <p>Select a date or log file to view chat history</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('dateInput').value = today;
+    document.getElementById('currentDate').textContent = today;
+
+    async function loadFilesList() {
+      try {
+        const res = await fetch('/logs_list');
+        const data = await res.json();
+        
+        const select = document.getElementById('fileSelect');
+        select.innerHTML = '<option value="">Select a log file...</option>';
+        
+        data.files.forEach(file => {
+          const option = document.createElement('option');
+          option.value = file;
+          option.textContent = file;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading files:', err);
+      }
+    }
+
+    async function loadLogs() {
+      const date = document.getElementById('dateInput').value;
+      const logsContainer = document.getElementById('logsContainer');
+      
+      logsContainer.innerHTML = '<div class="empty-state"><div>⏳</div><p>Loading logs...</p></div>';
+
+      try {
+        const res = await fetch(`/view_logs?date=${date}`);
+        const data = await res.json();
+
+        if (data.logs === "No logs found for this date") {
+          logsContainer.innerHTML = '<div class="empty-state"><div>📭</div><p>No logs found for this date</p></div>';
+          updateStats(0, 0, 0);
+          return;
+        }
+
+        const lines = data.logs.split('\n');
+        let html = '';
+        let userCount = 0;
+        let botCount = 0;
+
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line.startsWith('[') && line.includes(']:')) {
+            const match = line.match(/\[(.*?)\] \[(.*?)\] \[(.*?)\]: (.*)/);
+            if (match) {
+              const [, timestamp, userId, sender, message] = match;
+              
+              if (sender === 'user') userCount++;
+              if (sender === 'bot') botCount++;
+
+              html += `
+                <div class="log-entry ${sender}">
+                  <div class="log-meta">
+                    <span>⏰ ${timestamp}</span>
+                    <span>👤 ${userId}</span>
+                    <span>💬 ${sender.toUpperCase()}</span>
+                  </div>
+                  <div class="log-message">${message}</div>
+                </div>
+              `;
+            }
+          }
+        }
+
+        logsContainer.innerHTML = html || '<div class="empty-state"><div>📝</div><p>No valid log entries found</p></div>';
+        updateStats(userCount + botCount, userCount, botCount);
+        document.getElementById('currentDate').textContent = date;
+
+      } catch (err) {
+        console.error('Error loading logs:', err);
+        logsContainer.innerHTML = '<div class="empty-state"><div>❌</div><p>Error loading logs</p></div>';
+      }
+    }
+
+    function updateStats(total, user, bot) {
+      document.getElementById('totalMessages').textContent = total;
+      document.getElementById('userMessages').textContent = user;
+      document.getElementById('botMessages').textContent = bot;
+    }
+
+    function refreshLogs() {
+      loadFilesList();
+      loadLogs();
+    }
+
+    async function downloadLogs() {
+      const date = document.getElementById('dateInput').value;
+      try {
+        const res = await fetch(`/view_logs?date=${date}`);
+        const data = await res.json();
+
+        const blob = new Blob([data.logs], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `prince-logs-${date}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert('Error downloading logs: ' + err.message);
+      }
+    }
+
+    document.getElementById('fileSelect').addEventListener('change', (e) => {
+      const file = e.target.value;
+      if (file) {
+        const date = file.replace('chat_', '').replace('.txt', '');
+        document.getElementById('dateInput').value = date;
+        loadLogs();
+      }
+    });
+
+    loadFilesList();
+    loadLogs();
+  </script>
+</body>
+</html>

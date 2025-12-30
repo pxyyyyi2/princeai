@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prince AI  🚀</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body>
+  
+  <!-- Background Animation -->
+  <div class="bg-animation">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+  </div>
+
+  <div class="chat-container">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-left">
+        <div class="avatar">
+          <span class="avatar-emoji">🤖</span>
+          <span class="status-dot"></span>
+        </div>
+        <div class="header-info">
+          <span class="bot-name">Prince AI</span>
+          <span class="status" id="status">
+            <i class="fas fa-circle"></i> Online
+          </span>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="icon-btn" onclick="clearChat()" title="Clear Chat">
+          <i class="fas fa-trash"></i>
+        </button>
+        <button class="icon-btn" onclick="exportChat()" title="Export Chat">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-header">
+        <h3>Settings</h3>
+        <button class="close-btn" onclick="toggleSettings()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="settings-content">
+        <div class="setting-item">
+          <label for="modelSelect">
+            <i class="fas fa-brain"></i> Model
+          </label>
+          <select id="modelSelect">
+            <option value="llama3">Llama 3</option>
+            <option value="codellama">Code Llama</option>
+            <option value="mistral">Mistral</option>
+          </select>
+        </div>
+        <div class="setting-item">
+          <label>
+            <i class="fas fa-palette"></i> Theme
+          </label>
+          <div class="theme-buttons">
+            <button class="theme-btn active" data-theme="dark" onclick="setTheme('dark')">
+              <i class="fas fa-moon"></i> Dark
+            </button>
+            <button class="theme-btn" data-theme="light" onclick="setTheme('light')">
+              <i class="fas fa-sun"></i> Light
+            </button>
+          </div>
+        </div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="soundToggle" checked /> 
+            Sound Effects
+          </label>
+        </div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="typingEffectToggle" checked /> 
+            Typing Effect
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Box -->
+    <div class="chat-box" id="chatBox">
+      <!-- Welcome message will be added by JS -->
+    </div>
+
+    <!-- Typing Indicator -->
+    <div class="typing-indicator" id="typingIndicator" style="display: none;">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <span>Prince is typing...</span>
+    </div>
+
+    <!-- Chat Input -->
+    <div class="chat-input">
+      <button class="icon-btn" onclick="toggleVoice()" id="voiceBtn" title="Voice Input">
+        <i class="fas fa-microphone"></i>
+      </button>
+      <input 
+        type="text" 
+        id="userInput" 
+        placeholder="(Type here)" 
+        autocomplete="off"
+      />
+      <button onclick="sendMessage()" id="sendBtn" class="send-btn">
+        <i class="fas fa-paper-plane" id="btnIcon"></i>
+      </button>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
