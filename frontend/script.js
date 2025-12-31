@@ -12,6 +12,8 @@ const typingEffectToggle = { checked: true };
 let chatHistory = [];
 let isRecording = false;
 let recognition = null;
+let isSpeakingEnabled = false;
+let currentUtterance = null;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,7 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedTheme = localStorage.getItem('theme') || 'dark';
   document.body.setAttribute('data-theme', savedTheme);
   
-  const savedModel = localStorage.getItem('selectedModel') || 'llama3';
+  isSpeakingEnabled = localStorage.getItem('ttsEnabled') === 'true';
+  updateSpeakerButton();
+  
+  // Preload voices
+  if (speechSynthesis) {
+    speechSynthesis.getVoices();
+  }
 });
 
 // Show Welcome Message
@@ -52,6 +60,119 @@ function showWelcomeMessage() {
   
   if (chatHistory.length === 0) {
     chatBox.innerHTML = welcomeHTML;
+  }
+}
+
+// Text-to-Speech with Male Voice Priority
+function speakText(text) {
+  if (!isSpeakingEnabled) return;
+  
+  // Stop any ongoing speech
+  if (currentUtterance) {
+    speechSynthesis.cancel();
+  }
+  
+  // Clean text (remove emojis and special chars)
+  const cleanText = text.replace(/[😊😄🔥💯🚀💡✨👍🎉❤️😭😅🤔]/g, '').trim();
+  
+  if (!cleanText) return;
+  
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  currentUtterance = utterance;
+  
+  // Get available voices
+  let voices = speechSynthesis.getVoices();
+  
+  if (voices.length === 0) {
+    // Voices not loaded yet, wait for them
+    speechSynthesis.onvoiceschanged = () => {
+      voices = speechSynthesis.getVoices();
+      setVoiceAndSpeak(utterance, voices);
+    };
+  } else {
+    setVoiceAndSpeak(utterance, voices);
+  }
+}
+
+function setVoiceAndSpeak(utterance, voices) {
+  console.log('🎙️ Available voices:', voices.length);
+
+  let selectedVoice = null;
+
+  // ✅ Priority 1: Indian English Male (BEST)
+  selectedVoice = voices.find(voice =>
+    voice.lang === 'hi-IN' &&
+    (
+      voice.name.toLowerCase().includes('male') ||
+      voice.name.toLowerCase().includes('ravi') ||
+      voice.name.toLowerCase().includes('india') ||
+      voice.name.toLowerCase().includes('google')
+    )
+  );
+
+  // ✅ Priority 2: Any English Male (fallback)
+  if (!selectedVoice) {
+    selectedVoice = voices.find(voice =>
+      voice.lang.startsWith('en') &&
+      !voice.name.toLowerCase().includes('female') &&
+      !voice.name.toLowerCase().includes('samantha') &&
+      !voice.name.toLowerCase().includes('victoria')
+    );
+  }
+
+  // ✅ Last fallback
+  if (!selectedVoice && voices.length > 0) {
+    selectedVoice = voices[0];
+  }
+
+  if (selectedVoice) {
+    console.log('✅ Selected voice:', selectedVoice.name, selectedVoice.lang);
+    utterance.voice = selectedVoice;
+  }
+
+  // 🎚️ Voice tuning (Male feel)
+  utterance.lang = 'hi-IN';   // 🔥 IMPORTANT
+  utterance.rate = 1.0;
+  utterance.pitch = 0.85;     // Slightly deep male
+  utterance.volume = 1.0;
+
+  utterance.onstart = () => console.log('🎤 Speaking...');
+  utterance.onend = () => currentUtterance = null;
+  utterance.onerror = e => console.error('TTS Error:', e);
+
+  speechSynthesis.speak(utterance);
+}
+
+
+// Toggle TTS
+function toggleSpeaking() {
+  isSpeakingEnabled = !isSpeakingEnabled;
+  localStorage.setItem('ttsEnabled', isSpeakingEnabled);
+  updateSpeakerButton();
+  sounds.receive();
+  
+  if (isSpeakingEnabled) {
+    // Test speak
+    speakText("Voice mode !");
+  } else {
+    // Stop any ongoing speech
+    speechSynthesis.cancel();
+  }
+}
+
+// Update Speaker Button UI
+function updateSpeakerButton() {
+  const speakerBtn = document.getElementById('speakerBtn');
+  if (speakerBtn) {
+    if (isSpeakingEnabled) {
+      speakerBtn.classList.add('active');
+      speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
+      speakerBtn.title = 'Voice ON - Click to mute';
+    } else {
+      speakerBtn.classList.remove('active');
+      speakerBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+      speakerBtn.title = 'Voice OFF - Click to enable';
+    }
   }
 }
 
@@ -203,7 +324,6 @@ async function sendMessage() {
       throw new Error('Server error');
     }
 
-    // Handle streaming response
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let botMessage = '';
@@ -252,13 +372,16 @@ async function sendMessage() {
       addToHistory(botMessage, "bot");
       sounds.receive();
       updateStatus(true);
+      
+      // Speak the bot's response if TTS enabled
+      setTimeout(() => speakText(botMessage), 100);
     } else {
       throw new Error('Empty response');
     }
 
   } catch (err) {
     hideTyping();
-    const errorMsg = "Bhai, kuch gadbad ho gayi 😭\n\nServer se connection nahi ho pa raha. Check kar:\n1. Internet connected hai?\n2. Server running hai?\n\nTry again after some time!";
+    const errorMsg = "Bhai, kuch gadbad ho gayi 😭\n\nServer se connection nahi ho pa raha. Try again!";
     addMessageToUI(errorMsg, "bot");
     sounds.error();
     updateStatus(false);
@@ -394,3 +517,12 @@ input.addEventListener("keydown", (e) => {
     sendMessage();
   }
 });
+
+// Preload voices
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = () => {
+    const voices = speechSynthesis.getVoices();
+    console.log('✅ Voices loaded:', voices.length);
+    voices.forEach(v => console.log(`  - ${v.name} (${v.lang})`));
+  };
+}

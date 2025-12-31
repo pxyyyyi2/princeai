@@ -102,21 +102,26 @@
     </div>
 
     <!-- Chat Input -->
-    <div class="chat-input">
-      <button class="icon-btn" onclick="toggleVoice()" id="voiceBtn" title="Voice Input">
-        <i class="fas fa-microphone"></i>
-      </button>
-      <input 
-        type="text" 
-        id="userInput" 
-        placeholder="(Type here)" 
-        autocomplete="off"
-      />
-      <button onclick="sendMessage()" id="sendBtn" class="send-btn">
-        <i class="fas fa-paper-plane" id="btnIcon"></i>
-      </button>
-    </div>
-  </div>
+   <div class="chat-input">
+  <button class="icon-btn" onclick="toggleVoice()" id="voiceBtn" title="Voice Input">
+    <i class="fas fa-microphone"></i>
+  </button>
+  
+  <!-- NEW: Speaker toggle button -->
+  <button class="icon-btn" onclick="toggleSpeaking()" id="speakerBtn" title="Voice OFF">
+    <i class="fas fa-volume-mute"></i>
+  </button>
+  
+  <input 
+    type="text" 
+    id="userInput" 
+    placeholder="(Type here)" 
+    autocomplete="off"
+  />
+  <button onclick="sendMessage()" id="sendBtn" class="send-btn">
+    <i class="fas fa-paper-plane" id="btnIcon"></i>
+  </button>
+</div>
 
   <script src="script.js"></script>
 </body>
