@@ -14,15 +14,19 @@ let isRecording = false;
 let recognition = null;
 let isSpeakingEnabled = false;
 let currentUtterance = null;
+let userName = '';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
-  showWelcomeMessage();
-  loadChatHistory();
-  loadModels();
-  initVoiceRecognition();
-  input.focus();
+  
+  // Check if user has entered name before
+  userName = localStorage.getItem('userName');
+  if (!userName) {
+    showNamePopup();
+  } else {
+    initializeApp();
+  }
   
   const savedTheme = localStorage.getItem('theme') || 'dark';
   document.body.setAttribute('data-theme', savedTheme);
@@ -36,12 +40,99 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Show Name Popup
+function showNamePopup() {
+  const popup = document.createElement('div');
+  popup.className = 'name-popup-overlay';
+  popup.innerHTML = `
+    <div class="name-popup">
+      <div class="popup-icon">👋</div>
+      <h2>Welcome to Prince AI!</h2>
+      <p>Apna naam batao bhai!</p>
+      <input 
+        type="text" 
+        id="nameInput" 
+        placeholder="Your name..." 
+        maxlength="20"
+        autocomplete="off"
+      />
+      <button id="submitName" class="submit-name-btn">
+        <i class="fas fa-arrow-right"></i> Let's Go!
+      </button>
+      <p class="privacy-note">Your name is stored locally on your device only</p>
+    </div>
+  `;
+  
+  document.body.appendChild(popup);
+  
+  // Focus on input
+  setTimeout(() => {
+    const nameInput = document.getElementById('nameInput');
+    nameInput.focus();
+    
+    // Submit on Enter key
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        submitName();
+      }
+    });
+  }, 100);
+  
+  // Submit button click
+  document.getElementById('submitName').addEventListener('click', submitName);
+}
+
+// Submit Name
+function submitName() {
+  const nameInput = document.getElementById('nameInput');
+  const name = nameInput.value.trim();
+  
+  if (!name) {
+    nameInput.style.borderColor = '#FF3B30';
+    nameInput.placeholder = 'Please enter your name!';
+    nameInput.focus();
+    return;
+  }
+  
+  // Save name
+  userName = name;
+  localStorage.setItem('userName', userName);
+  
+  // Remove popup with animation
+  const popup = document.querySelector('.name-popup-overlay');
+  const popupBox = document.querySelector('.name-popup');
+  
+  popupBox.style.transform = 'scale(0.9)';
+  popupBox.style.opacity = '0';
+  
+  setTimeout(() => {
+    popup.remove();
+    initializeApp();
+    
+    // Show personalized welcome
+    setTimeout(() => {
+      if (isSpeakingEnabled) {
+        speakText(`Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`);
+      }
+    }, 500);
+  }, 300);
+}
+
+// Initialize App
+function initializeApp() {
+  showWelcomeMessage();
+  loadChatHistory();
+  loadModels();
+  initVoiceRecognition();
+  input.focus();
+}
+
 // Show Welcome Message
 function showWelcomeMessage() {
   const welcomeHTML = `
     <div class="welcome-message">
       <div class="welcome-icon">👋</div>
-      <h2>Namaste!</h2>
+      <h2>Namaste${userName ? ' ' + userName : ''}!</h2>
       <p>Main Prince hoon 🚀</p>
       <p class="welcome-subtext">Koi bhi doubt ho ya help chahiye, bas puchlo!</p>
       <div class="quick-actions">
@@ -67,12 +158,10 @@ function showWelcomeMessage() {
 function speakText(text) {
   if (!isSpeakingEnabled) return;
   
-  // Stop any ongoing speech
   if (currentUtterance) {
     speechSynthesis.cancel();
   }
   
-  // Clean text (remove emojis and special chars)
   const cleanText = text.replace(/[😊😄🔥💯🚀💡✨👍🎉❤️😭😅🤔]/g, '').trim();
   
   if (!cleanText) return;
@@ -80,11 +169,9 @@ function speakText(text) {
   const utterance = new SpeechSynthesisUtterance(cleanText);
   currentUtterance = utterance;
   
-  // Get available voices
   let voices = speechSynthesis.getVoices();
   
   if (voices.length === 0) {
-    // Voices not loaded yet, wait for them
     speechSynthesis.onvoiceschanged = () => {
       voices = speechSynthesis.getVoices();
       setVoiceAndSpeak(utterance, voices);
@@ -99,7 +186,6 @@ function setVoiceAndSpeak(utterance, voices) {
 
   let selectedVoice = null;
 
-  // ✅ Priority 1: Indian English Male (BEST)
   selectedVoice = voices.find(voice =>
     voice.lang === 'hi-IN' &&
     (
@@ -110,7 +196,6 @@ function setVoiceAndSpeak(utterance, voices) {
     )
   );
 
-  // ✅ Priority 2: Any English Male (fallback)
   if (!selectedVoice) {
     selectedVoice = voices.find(voice =>
       voice.lang.startsWith('en') &&
@@ -120,7 +205,6 @@ function setVoiceAndSpeak(utterance, voices) {
     );
   }
 
-  // ✅ Last fallback
   if (!selectedVoice && voices.length > 0) {
     selectedVoice = voices[0];
   }
@@ -130,10 +214,9 @@ function setVoiceAndSpeak(utterance, voices) {
     utterance.voice = selectedVoice;
   }
 
-  // 🎚️ Voice tuning (Male feel)
-  utterance.lang = 'hi-IN';   // 🔥 IMPORTANT
+  utterance.lang = 'hi-IN';
   utterance.rate = 1.0;
-  utterance.pitch = 0.85;     // Slightly deep male
+  utterance.pitch = 0.85;
   utterance.volume = 1.0;
 
   utterance.onstart = () => console.log('🎤 Speaking...');
@@ -143,7 +226,6 @@ function setVoiceAndSpeak(utterance, voices) {
   speechSynthesis.speak(utterance);
 }
 
-
 // Toggle TTS
 function toggleSpeaking() {
   isSpeakingEnabled = !isSpeakingEnabled;
@@ -152,10 +234,8 @@ function toggleSpeaking() {
   sounds.receive();
   
   if (isSpeakingEnabled) {
-    // Test speak
-    speakText("Voice mode !");
+    speakText("Voice mode on!");
   } else {
-    // Stop any ongoing speech
     speechSynthesis.cancel();
   }
 }
@@ -309,12 +389,15 @@ async function sendMessage() {
 
   try {
     const selectedModel = localStorage.getItem('selectedModel') || 'llama3';
+    const userName = localStorage.getItem('userName') || 'anonymous';
+    
     const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         message: userText,
-        model: selectedModel 
+        model: selectedModel,
+        user_id: userName  // Send user name to backend
       })
     });
 
@@ -373,7 +456,6 @@ async function sendMessage() {
       sounds.receive();
       updateStatus(true);
       
-      // Speak the bot's response if TTS enabled
       setTimeout(() => speakText(botMessage), 100);
     } else {
       throw new Error('Empty response');
