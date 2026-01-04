@@ -443,19 +443,18 @@ body::after {
 /* Chat Input */
 /* Chat Input */
 /* Chat Input */
+
 .chat-input {
   display: flex;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));
-  backdrop-filter: blur(15px);
-  border-top: 1px solid rgba(255, 105, 180, 0.3);
-  gap: 10px;
   align-items: center;
-  transition: all 0.5s ease;
-  flex-wrap: nowrap;
-  position: sticky;
-  bottom: 0;
+  gap: 8px;
 }
+
+.chat-input input {
+  flex: 1;
+  min-width: 0;   /* 🔥 यही main fix है */
+}
+
 .chat-input input {
   flex: 1;
   padding: 14px 18px;
@@ -790,5 +789,16 @@ body::after {
   
   .popup-icon {
     font-size: 56px;
+  }
+}
+
+.send-btn {
+  flex-shrink: 0;
+}
+
+
+@media (max-width: 768px) {
+  .chat-input {
+    overflow: visible;
   }
 }
