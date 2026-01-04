@@ -4,7 +4,6 @@ const sendBtn = document.getElementById("sendBtn");
 const btnIcon = document.getElementById("btnIcon");
 const status = document.getElementById("status");
 const typingIndicator = document.getElementById("typingIndicator");
-const modelSelect = document.getElementById("modelSelect");
 const voiceBtn = document.getElementById("voiceBtn");
 const soundToggle = { checked: true };
 const typingEffectToggle = { checked: true };
@@ -15,12 +14,19 @@ let recognition = null;
 let isSpeakingEnabled = false;
 let currentUtterance = null;
 let userName = '';
+const APP_VERSION = '2.0';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
   
-  // Check if user has entered name before
+  const savedVersion = localStorage.getItem('appVersion');
+  if (savedVersion !== APP_VERSION) {
+    console.log('🔄 Version update detected! Clearing old data...');
+    localStorage.clear();
+    localStorage.setItem('appVersion', APP_VERSION);
+  }
+  
   userName = localStorage.getItem('userName');
   if (!userName) {
     showNamePopup();
@@ -34,21 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
   isSpeakingEnabled = localStorage.getItem('ttsEnabled') === 'true';
   updateSpeakerButton();
   
-  // Preload voices
   if (speechSynthesis) {
     speechSynthesis.getVoices();
   }
 });
 
 // Show Name Popup
-function showNamePopup() {
+function showNamePopup(isFirstTime = false) {
   const popup = document.createElement('div');
   popup.className = 'name-popup-overlay';
   popup.innerHTML = `
     <div class="name-popup">
       <div class="popup-icon">👋</div>
       <h2>Welcome to Prince AI!</h2>
-      <p>Apna naam batao bhai!</p>
+      <p>Apna naam batao!</p>
       <input 
         type="text" 
         id="nameInput" 
@@ -65,40 +70,38 @@ function showNamePopup() {
   
   document.body.appendChild(popup);
   
-  // Focus on input
   setTimeout(() => {
     const nameInput = document.getElementById('nameInput');
     nameInput.focus();
     
-    // Submit on Enter key
     nameInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        submitName();
+        submitName(isFirstTime);
       }
     });
   }, 100);
   
-  // Submit button click
-  document.getElementById('submitName').addEventListener('click', submitName);
+  document.getElementById('submitName').addEventListener('click', () => submitName(isFirstTime));
 }
 
 // Submit Name
-function submitName() {
+function submitName(isFirstTime = false) {
   const nameInput = document.getElementById('nameInput');
   const name = nameInput.value.trim();
   
   if (!name) {
-    nameInput.style.borderColor = '#FF3B30';
+    nameInput.style.borderColor = '#ff1493';
     nameInput.placeholder = 'Please enter your name!';
     nameInput.focus();
     return;
   }
   
-  // Save name
   userName = name;
   localStorage.setItem('userName', userName);
   
-  // Remove popup with animation
+  const gender = detectGender(name);
+  localStorage.setItem('userGender', gender);
+  
   const popup = document.querySelector('.name-popup-overlay');
   const popupBox = document.querySelector('.name-popup');
   
@@ -109,20 +112,51 @@ function submitName() {
     popup.remove();
     initializeApp();
     
-    // Show personalized welcome
+    // Show welcome banner for first time users
+    if (isFirstTime) {
+      setTimeout(() => {
+        showFirstTimeWelcomeBanner();
+      }, 500);
+    }
+    
     setTimeout(() => {
       if (isSpeakingEnabled) {
-        speakText(`Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`);
+        const greeting = gender === 'female' ? `Namaste ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
+        speakText(greeting);
       }
     }, 500);
   }, 300);
+}
+
+// Detect Gender from Name
+function detectGender(name) {
+  const nameLower = name.toLowerCase();
+  
+  const femaleEndings = ['a', 'i', 'ya', 'ka', 'sha', 'na', 'ta', 'la', 'ra'];
+  
+  const femaleNames = [
+    'priya', 'riya', 'diya', 'ananya', 'isha', 'neha', 'pooja', 'shreya',
+    'kavya', 'divya', 'sneha', 'sakshi', 'nisha', 'tanvi', 'simran', 'ritika',
+    'anjali', 'megha', 'swati', 'jyoti', 'preeti', 'sonal', 'shweta', 'komal',
+    'ayesha', 'fatima', 'sana', 'zara', 'alisha', 'sophia', 'emily', 'sarah',
+    'jessica', 'maria', 'anna', 'lisa', 'karen', 'nancy', 'linda', 'susan'
+  ];
+  
+  if (femaleNames.some(fn => nameLower.includes(fn))) {
+    return 'female';
+  }
+  
+  if (femaleEndings.some(ending => nameLower.endsWith(ending) && nameLower.length > 3)) {
+    return 'female';
+  }
+  
+  return 'male';
 }
 
 // Initialize App
 function initializeApp() {
   showWelcomeMessage();
   loadChatHistory();
-  loadModels();
   initVoiceRecognition();
   input.focus();
 }
@@ -137,7 +171,7 @@ function showWelcomeMessage() {
       <p class="welcome-subtext">Koi bhi doubt ho ya help chahiye, bas puchlo!</p>
       <div class="quick-actions">
         <button class="quick-btn" onclick="quickMessage('Python kaise sikhu?')">
-          <i class="fas fa-python"></i> Learn Python
+          <i class="fas fa-code"></i> Learn Python
         </button>
         <button class="quick-btn" onclick="quickMessage('Web development tips do')">
           <i class="fas fa-globe"></i> Web Dev
@@ -154,7 +188,7 @@ function showWelcomeMessage() {
   }
 }
 
-// Text-to-Speech with Male Voice Priority
+// Text-to-Speech
 function speakText(text) {
   if (!isSpeakingEnabled) return;
   
@@ -182,8 +216,6 @@ function speakText(text) {
 }
 
 function setVoiceAndSpeak(utterance, voices) {
-  console.log('🎙️ Available voices:', voices.length);
-
   let selectedVoice = null;
 
   selectedVoice = voices.find(voice =>
@@ -191,17 +223,14 @@ function setVoiceAndSpeak(utterance, voices) {
     (
       voice.name.toLowerCase().includes('male') ||
       voice.name.toLowerCase().includes('ravi') ||
-      voice.name.toLowerCase().includes('india') ||
-      voice.name.toLowerCase().includes('google')
+      voice.name.toLowerCase().includes('india')
     )
   );
 
   if (!selectedVoice) {
     selectedVoice = voices.find(voice =>
       voice.lang.startsWith('en') &&
-      !voice.name.toLowerCase().includes('female') &&
-      !voice.name.toLowerCase().includes('samantha') &&
-      !voice.name.toLowerCase().includes('victoria')
+      !voice.name.toLowerCase().includes('female')
     );
   }
 
@@ -210,7 +239,6 @@ function setVoiceAndSpeak(utterance, voices) {
   }
 
   if (selectedVoice) {
-    console.log('✅ Selected voice:', selectedVoice.name, selectedVoice.lang);
     utterance.voice = selectedVoice;
   }
 
@@ -219,9 +247,7 @@ function setVoiceAndSpeak(utterance, voices) {
   utterance.pitch = 0.85;
   utterance.volume = 1.0;
 
-  utterance.onstart = () => console.log('🎤 Speaking...');
   utterance.onend = () => currentUtterance = null;
-  utterance.onerror = e => console.error('TTS Error:', e);
 
   speechSynthesis.speak(utterance);
 }
@@ -240,18 +266,18 @@ function toggleSpeaking() {
   }
 }
 
-// Update Speaker Button UI
+// Update Speaker Button
 function updateSpeakerButton() {
   const speakerBtn = document.getElementById('speakerBtn');
   if (speakerBtn) {
     if (isSpeakingEnabled) {
       speakerBtn.classList.add('active');
       speakerBtn.innerHTML = '<i class="fas fa-volume-up"></i>';
-      speakerBtn.title = 'Voice ON - Click to mute';
+      speakerBtn.title = 'Voice ON';
     } else {
       speakerBtn.classList.remove('active');
       speakerBtn.innerHTML = '<i class="fas fa-volume-mute"></i>';
-      speakerBtn.title = 'Voice OFF - Click to enable';
+      speakerBtn.title = 'Voice OFF';
     }
   }
 }
@@ -286,7 +312,7 @@ function playSound(frequency, duration, type) {
   }
 }
 
-// Chat History Management
+// Chat History
 function loadChatHistory() {
   const saved = localStorage.getItem('chatHistory');
   if (saved) {
@@ -374,7 +400,7 @@ function hideTyping() {
   typingIndicator.style.display = 'none';
 }
 
-// Send Message with Streaming
+// Send Message
 async function sendMessage() {
   const userText = input.value.trim();
   if (!userText) return;
@@ -388,16 +414,16 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const selectedModel = localStorage.getItem('selectedModel') || 'llama3';
     const userName = localStorage.getItem('userName') || 'anonymous';
+    const userGender = localStorage.getItem('userGender') || 'male';
     
     const response = await fetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ 
         message: userText,
-        model: selectedModel,
-        user_id: userName  // Send user name to backend
+        user_id: userName,
+        user_gender: userGender
       })
     });
 
@@ -463,7 +489,7 @@ async function sendMessage() {
 
   } catch (err) {
     hideTyping();
-    const errorMsg = "Bhai, kuch gadbad ho gayi 😭\n\nServer se connection nahi ho pa raha. Try again!";
+    const errorMsg = "Sorry yaar, kuch problem ho gayi 😔\n\nServer se connection nahi ho pa raha. Try again!";
     addMessageToUI(errorMsg, "bot");
     sounds.error();
     updateStatus(false);
@@ -529,38 +555,9 @@ function toggleVoice() {
   }
 }
 
-// Settings
-function toggleSettings() {
-  const panel = document.getElementById('settingsPanel');
-  panel.classList.toggle('active');
-}
-
-function setTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-  
-  document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.classList.remove('active');
-    if (btn.dataset.theme === theme) {
-      btn.classList.add('active');
-    }
-  });
-}
-
-// Load Available Models
-async function loadModels() {
-  console.log('Using Groq models');
-}
-
-// Model Selection
-modelSelect.addEventListener('change', () => {
-  localStorage.setItem('selectedModel', modelSelect.value);
-  sounds.receive();
-});
-
 // Clear Chat
 function clearChat() {
-  if (confirm('Bhai, sab chats delete karna hai? This cannot be undone!')) {
+  if (confirm('Sab chats delete karna hai? This cannot be undone!')) {
     chatHistory = [];
     localStorage.removeItem('chatHistory');
     showWelcomeMessage();
@@ -571,7 +568,7 @@ function clearChat() {
 // Export Chat
 function exportChat() {
   if (chatHistory.length === 0) {
-    alert('Bhai, abhi koi chat nahi hai export karne ke liye!');
+    alert('Abhi koi chat nahi hai export karne ke liye!');
     return;
   }
 
@@ -600,11 +597,44 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
+// Theme Toggle Function
+function toggleTheme() {
+  const currentTheme = document.body.getAttribute('data-theme') || 'light';
+  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+  
+  document.body.setAttribute('data-theme', newTheme);
+  localStorage.setItem('theme', newTheme);
+  
+  // Update theme button icon
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.innerHTML = newTheme === 'dark' 
+      ? '<i class="fas fa-sun"></i>' 
+      : '<i class="fas fa-moon"></i>';
+    themeBtn.title = newTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+  }
+  
+  sounds.receive();
+}
+
+// Load saved theme on startup
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('theme') || 'light';
+  document.body.setAttribute('data-theme', savedTheme);
+  
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) {
+    themeBtn.innerHTML = savedTheme === 'dark' 
+      ? '<i class="fas fa-sun"></i>' 
+      : '<i class="fas fa-moon"></i>';
+    themeBtn.title = savedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+  }
+});
+
 // Preload voices
 if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = () => {
     const voices = speechSynthesis.getVoices();
     console.log('✅ Voices loaded:', voices.length);
-    voices.forEach(v => console.log(`  - ${v.name} (${v.lang})`));
   };
 }
