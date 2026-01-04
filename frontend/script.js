@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
   userName = localStorage.getItem('userName');
   if (!userName) {
-    showNamePopup();
+    showNamePopup(true); // Set to true for first time
   } else {
     initializeApp();
   }
@@ -82,6 +82,32 @@ function showNamePopup(isFirstTime = false) {
   }, 100);
   
   document.getElementById('submitName').addEventListener('click', () => submitName(isFirstTime));
+}
+
+// Show First Time Welcome Banner
+function showFirstTimeWelcomeBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'update-banner';
+  banner.innerHTML = `
+    <div class="update-banner-icon">🎉</div>
+    <div class="update-banner-text">
+      Welcome to Prince AI v${APP_VERSION}! Ready to help you! 🚀
+    </div>
+    <button class="update-banner-close" onclick="this.parentElement.remove()">
+      <i class="fas fa-times"></i>
+    </button>
+  `;
+  
+  document.body.appendChild(banner);
+  
+  setTimeout(() => {
+    banner.classList.add('show');
+  }, 100);
+  
+  setTimeout(() => {
+    banner.classList.remove('show');
+    setTimeout(() => banner.remove(), 500);
+  }, 5000);
 }
 
 // Submit Name
