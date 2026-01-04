@@ -14,22 +14,37 @@ let recognition = null;
 let isSpeakingEnabled = false;
 let currentUtterance = null;
 let userName = '';
-const APP_VERSION = '2.0';
 
-// Initialize
+
+
+
+// Add to script.js - After APP_VERSION constant
+
+// Add to script.js - After APP_VERSION constant
+
+const APP_VERSION = '3.0'; // Change this to trigger banner for all users
+
+// Initialize - Update this section
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
   
   const savedVersion = localStorage.getItem('appVersion');
-  if (savedVersion !== APP_VERSION) {
-    console.log('🔄 Version update detected! Clearing old data...');
-    localStorage.clear();
+  const hasSeenUpdateBanner = localStorage.getItem('hasSeenUpdateBanner_' + APP_VERSION);
+  
+  // Show update banner if version changed OR never seen this version's banner
+  if (savedVersion !== APP_VERSION || !hasSeenUpdateBanner) {
+    showFullScreenUpdateBanner();
     localStorage.setItem('appVersion', APP_VERSION);
   }
   
   userName = localStorage.getItem('userName');
   if (!userName) {
-    showNamePopup(true); // Set to true for first time
+    // Don't show name popup if update banner is showing
+    if (!hasSeenUpdateBanner && savedVersion) {
+      // User exists but needs to see update banner first
+    } else {
+      showNamePopup(true);
+    }
   } else {
     initializeApp();
   }
@@ -44,6 +59,130 @@ document.addEventListener('DOMContentLoaded', () => {
     speechSynthesis.getVoices();
   }
 });
+
+// Show Full-Screen Update Banner
+function showFullScreenUpdateBanner() {
+  const banner = document.createElement('div');
+  banner.className = 'fullscreen-update-overlay';
+  banner.innerHTML = `
+    <div class="fullscreen-update-container">
+      <!-- Animated Background -->
+      <div class="update-bg-shapes">
+        <div class="update-shape update-shape-1"></div>
+        <div class="update-shape update-shape-2"></div>
+        <div class="update-shape update-shape-3"></div>
+      </div>
+      
+      <!-- Content -->
+      <div class="update-content">
+        <!-- Icon -->
+        <div class="update-icon-container">
+          <div class="update-icon-glow"></div>
+          <div class="update-icon">🎉</div>
+        </div>
+        
+        <!-- Title -->
+        <h1 class="update-title">Prince AI v${APP_VERSION}</h1>
+        <p class="update-subtitle"> 🔥</p>
+        
+        <!-- Features Grid -->
+        <div class="update-features">
+          <div class="update-feature">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-text">
+              <h3>Super Fast</h3>
+              <p>Lightning-speed responses!</p>
+            </div>
+          </div>
+          
+          <div class="update-feature">
+            <div class="feature-icon">🎭</div>
+            <div class="feature-text">
+              <h3>Savage Mode</h3>
+              <p>Funny, helpful & real!</p>
+            </div>
+          </div>
+          
+          <div class="update-feature">
+            <div class="feature-icon">🎙️</div>
+            <div class="feature-text">
+              <h3>Voice Power</h3>
+              <p>Speak & hear answers!</p>
+            </div>
+          </div>
+          
+          <div class="update-feature">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-text">
+              <h3>Gender Smart</h3>
+              <p>Respects everyone!</p>
+            </div>
+          </div>
+          
+          <div class="update-feature">
+            <div class="feature-icon">💎</div>
+            <div class="feature-text">
+              <h3>Premium Design</h3>
+              <p>Beautiful new theme!</p>
+            </div>
+          </div>
+          
+          <div class="update-feature">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-text">
+              <h3>Fastest AI</h3>
+              <p>Powered by Groq!</p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- CTA -->
+        <button class="update-cta" onclick="closeFullScreenUpdateBanner()">
+          <span>Let's Go!</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+        
+        <!-- Footer -->
+        <p class="update-footer">Made with ❤️ by Prince</p>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(banner);
+  
+  // Animate in
+  setTimeout(() => {
+    banner.classList.add('show');
+  }, 100);
+  
+  // Play sound
+  sounds.receive();
+}
+
+// Close Full-Screen Update Banner
+function closeFullScreenUpdateBanner() {
+  const banner = document.querySelector('.fullscreen-update-overlay');
+  if (!banner) return;
+  
+  // Mark as seen
+  localStorage.setItem('hasSeenUpdateBanner_' + APP_VERSION, 'true');
+  
+  // Animate out
+  banner.classList.remove('show');
+  banner.classList.add('hide');
+  
+  setTimeout(() => {
+    banner.remove();
+    
+    // Check if user needs to enter name
+    const userName = localStorage.getItem('userName');
+    if (!userName) {
+      showNamePopup(true);
+    }
+  }, 500);
+  
+  sounds.send();
+}
 
 // Show Name Popup
 function showNamePopup(isFirstTime = false) {
@@ -147,7 +286,7 @@ function submitName(isFirstTime = false) {
     
     setTimeout(() => {
       if (isSpeakingEnabled) {
-        const greeting = gender === 'female' ? `Namaste ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
+        const greeting = gender === 'female' ? `Heyy😺 ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
         speakText(greeting);
       }
     }, 500);
@@ -192,7 +331,7 @@ function showWelcomeMessage() {
   const welcomeHTML = `
     <div class="welcome-message">
       <div class="welcome-icon">👋</div>
-      <h2>Namaste${userName ? ' ' + userName : ''}!</h2>
+      <h2>Heyy😺${userName ? ' ' + userName : ''}!</h2>
       <p>Main Prince hoon 🚀</p>
       <p class="welcome-subtext">Koi bhi doubt ho ya help chahiye, bas puchlo!</p>
       <div class="quick-actions">
