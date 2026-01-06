@@ -982,6 +982,8 @@ body::after {
 }
 
 /* Mobile Responsive */
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
   body { 
     padding: 0;
@@ -999,21 +1001,26 @@ body::after {
     left: 0;
   }
   
- .chat-header {
-  padding: 16px 20px;
-  position: fixed;     /* ✅ CHANGED */
-  top: 0;
-  left: 0;             /* ⭐ ADD */
-  right: 0;            /* ⭐ ADD */
-  z-index: 10;
-  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));  /* ⭐ ADD */
-  backdrop-filter: blur(15px);  /* ⭐ ADD */
-}
+  .chat-header {
+    padding: 16px 20px;
+    position: sticky;  /* ✅ CHANGED */
+    top: 0;
+    z-index: 10;
+  }
 
-.chat-box {
-  padding-top: 100px;      /* ⭐ ADD THIS WHOLE BLOCK */
-  padding-bottom: 140px;   /* ⭐ ADD */
-}
+  .chat-box {
+    padding-top: 20px;      /* ✅ NORMAL PADDING */
+    padding-bottom: 120px;  /* ✅ Space for input */
+  }
+
+  .chat-input {
+    padding: 16px 20px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
 
 .chat-input {
   padding: 16px 20px;
