@@ -15,16 +15,9 @@ let isSpeakingEnabled = false;
 let currentUtterance = null;
 let userName = '';
 
+const APP_VERSION = '3.2';
 
-
-
-// Add to script.js - After APP_VERSION constant
-
-// Add to script.js - After APP_VERSION constant
-
-const APP_VERSION = '3.2'; // Change this to trigger banner for all users
-
-// Initialize - Update this section
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
   
@@ -39,7 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
   
   userName = localStorage.getItem('userName');
   if (!userName) {
-    // Don't show name popup if update banner is showing
     if (!hasSeenUpdateBanner && savedVersion) {
       // User exists but needs to see update banner first
     } else {
@@ -49,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeApp();
   }
   
-  const savedTheme = localStorage.getItem('theme') || 'dark';
+  const savedTheme = localStorage.getItem('theme') || 'pink-light';
   document.body.setAttribute('data-theme', savedTheme);
   
   isSpeakingEnabled = localStorage.getItem('ttsEnabled') === 'true';
@@ -66,26 +58,21 @@ function showFullScreenUpdateBanner() {
   banner.className = 'fullscreen-update-overlay';
   banner.innerHTML = `
     <div class="fullscreen-update-container">
-      <!-- Animated Background -->
       <div class="update-bg-shapes">
         <div class="update-shape update-shape-1"></div>
         <div class="update-shape update-shape-2"></div>
         <div class="update-shape update-shape-3"></div>
       </div>
       
-      <!-- Content -->
       <div class="update-content">
-        <!-- Icon -->
         <div class="update-icon-container">
           <div class="update-icon-glow"></div>
           <div class="update-icon">🎉</div>
         </div>
         
-        <!-- Title -->
         <h1 class="update-title">Prince AI v${APP_VERSION}</h1>
-        <p class="update-subtitle"> 🔥</p>
+        <p class="update-subtitle">🔥 Fresh Update 🔥</p>
         
-        <!-- Features Grid -->
         <div class="update-features">
           <div class="update-feature">
             <div class="feature-icon">⚡</div>
@@ -98,8 +85,8 @@ function showFullScreenUpdateBanner() {
           <div class="update-feature">
             <div class="feature-icon">🎭</div>
             <div class="feature-text">
-              <h3>New Preminum Themes</h3>
-              <p>Select preminum themes </p>
+              <h3>New Premium Themes</h3>
+              <p>Select premium themes</p>
             </div>
           </div>
           
@@ -123,7 +110,7 @@ function showFullScreenUpdateBanner() {
             <div class="feature-icon">💎</div>
             <div class="feature-text">
               <h3>Premium Design</h3>
-              <p>Beautiful new Exclusive themes!</p>
+              <p>Beautiful new themes!</p>
             </div>
           </div>
           
@@ -136,13 +123,11 @@ function showFullScreenUpdateBanner() {
           </div>
         </div>
         
-        <!-- CTA -->
         <button class="update-cta" onclick="closeFullScreenUpdateBanner()">
           <span>Let's Go!</span>
           <i class="fas fa-arrow-right"></i>
         </button>
         
-        <!-- Footer -->
         <p class="update-footer">Made with ❤️ by Prince</p>
       </div>
     </div>
@@ -150,12 +135,10 @@ function showFullScreenUpdateBanner() {
   
   document.body.appendChild(banner);
   
-  // Animate in
   setTimeout(() => {
     banner.classList.add('show');
   }, 100);
   
-  // Play sound
   sounds.receive();
 }
 
@@ -164,17 +147,14 @@ function closeFullScreenUpdateBanner() {
   const banner = document.querySelector('.fullscreen-update-overlay');
   if (!banner) return;
   
-  // Mark as seen
   localStorage.setItem('hasSeenUpdateBanner_' + APP_VERSION, 'true');
   
-  // Animate out
   banner.classList.remove('show');
   banner.classList.add('hide');
   
   setTimeout(() => {
     banner.remove();
     
-    // Check if user needs to enter name
     const userName = localStorage.getItem('userName');
     if (!userName) {
       showNamePopup(true);
@@ -211,16 +191,79 @@ function showNamePopup(isFirstTime = false) {
   
   setTimeout(() => {
     const nameInput = document.getElementById('nameInput');
-    nameInput.focus();
+    const submitBtn = document.getElementById('submitName');
     
-    nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+    if (nameInput) nameInput.focus();
+    
+    // Enter key handler
+    if (nameInput) {
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submitName(isFirstTime);
+        }
+      });
+    }
+    
+    // Button click handler
+    if (submitBtn) {
+      submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
         submitName(isFirstTime);
-      }
-    });
+      });
+    }
   }, 100);
+}
+
+// Submit Name
+function submitName(isFirstTime = false) {
+  const nameInput = document.getElementById('nameInput');
+  if (!nameInput) return;
   
-  document.getElementById('submitName').addEventListener('click', () => submitName(isFirstTime));
+  const name = nameInput.value.trim();
+  
+  console.log('Submitting name:', name, 'First time:', isFirstTime);
+  
+  if (!name) {
+    nameInput.style.borderColor = '#ff1493';
+    nameInput.placeholder = 'Please enter your name!';
+    nameInput.focus();
+    return;
+  }
+  
+  userName = name;
+  localStorage.setItem('userName', userName);
+  
+  const gender = detectGender(name);
+  localStorage.setItem('userGender', gender);
+  
+  const popup = document.querySelector('.name-popup-overlay');
+  const popupBox = document.querySelector('.name-popup');
+  
+  if (popupBox) {
+    popupBox.style.transform = 'scale(0.9)';
+    popupBox.style.opacity = '0';
+  }
+  
+  setTimeout(() => {
+    if (popup) popup.remove();
+    initializeApp();
+    
+    if (isFirstTime) {
+      setTimeout(() => {
+        showFirstTimeWelcomeBanner();
+      }, 500);
+    }
+    
+    setTimeout(() => {
+      if (isSpeakingEnabled) {
+        const greeting = gender === 'female' 
+          ? `Heyy😺 ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` 
+          : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
+        speakText(greeting);
+      }
+    }, 500);
+  }, 300);
 }
 
 // Show First Time Welcome Banner
@@ -247,50 +290,6 @@ function showFirstTimeWelcomeBanner() {
     banner.classList.remove('show');
     setTimeout(() => banner.remove(), 500);
   }, 5000);
-}
-
-// Submit Name
-function submitName(isFirstTime = false) {
-  const nameInput = document.getElementById('nameInput');
-  const name = nameInput.value.trim();
-  
-  if (!name) {
-    nameInput.style.borderColor = '#ff1493';
-    nameInput.placeholder = 'Please enter your name!';
-    nameInput.focus();
-    return;
-  }
-  
-  userName = name;
-  localStorage.setItem('userName', userName);
-  
-  const gender = detectGender(name);
-  localStorage.setItem('userGender', gender);
-  
-  const popup = document.querySelector('.name-popup-overlay');
-  const popupBox = document.querySelector('.name-popup');
-  
-  popupBox.style.transform = 'scale(0.9)';
-  popupBox.style.opacity = '0';
-  
-  setTimeout(() => {
-    popup.remove();
-    initializeApp();
-    
-    // Show welcome banner for first time users
-    if (isFirstTime) {
-      setTimeout(() => {
-        showFirstTimeWelcomeBanner();
-      }, 500);
-    }
-    
-    setTimeout(() => {
-      if (isSpeakingEnabled) {
-        const greeting = gender === 'female' ? `Heyy😺 ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
-        speakText(greeting);
-      }
-    }, 500);
-  }, 300);
 }
 
 // Detect Gender from Name
@@ -361,7 +360,7 @@ function speakText(text) {
     speechSynthesis.cancel();
   }
   
-  const cleanText = text.replace(/[😊😄🔥💯🚀💡✨👍🎉❤️😭😅🤔]/g, '').trim();
+  const cleanText = text.replace(/[😊😄🔥💯🚀💡✨👍🎉❤️😭😅🤔😺]/g, '').trim();
   
   if (!cleanText) return;
   
@@ -762,49 +761,6 @@ input.addEventListener("keydown", (e) => {
   }
 });
 
-// Theme Toggle Function
-function showThemePicker() {
-  document.getElementById('themePicker').style.display = 'flex';
-  updateActiveTheme();
-  sounds.receive();
-}
-
-function closeThemePicker() {
-  document.getElementById('themePicker').style.display = 'none';
-  sounds.send();
-}
-
-function changeTheme(theme) {
-  document.body.setAttribute('data-theme', theme);
-  localStorage.setItem('theme', theme);
-  updateActiveTheme();
-  sounds.receive();
-}
-
-function updateActiveTheme() {
-  const currentTheme = localStorage.getItem('theme') || 'pink-light';
-  document.querySelectorAll('.theme-card').forEach(card => {
-    card.classList.remove('active');
-    if (card.getAttribute('data-theme') === currentTheme) {
-      card.classList.add('active');
-    }
-  });
-}
-
-// Close theme picker when clicking outside
-document.addEventListener('click', (e) => {
-  const themePicker = document.getElementById('themePicker');
-  if (e.target === themePicker) {
-    closeThemePicker();
-  }
-});
-
-// Load saved theme on startup
-// Load saved theme on startup
-document.addEventListener('DOMContentLoaded', () => {
-  const savedTheme = localStorage.getItem('theme') || 'pink-light';
-  document.body.setAttribute('data-theme', savedTheme);
-});
 // Preload voices
 if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = () => {
