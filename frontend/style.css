@@ -449,9 +449,11 @@ body::after {
 }
 
 /* Chat Box */
+/* Chat Box - FIXED */
 .chat-box {
   flex: 1;
   padding: 24px;
+  padding-bottom: 120px; /* 🔥 MAIN FIX - Space for input area */
   overflow-y: auto;
   scroll-behavior: smooth;
   background: var(--chat-box-bg);
@@ -623,22 +625,19 @@ body::after {
 }
 
 /* Chat Input */
-/* Chat Input */
-/* Chat Input */
-
 .chat-input {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 16px 24px; /* Added padding */
+  background: var(--header-bg); /* Added background */
+  border-top: 1px solid rgba(255, 105, 180, 0.3); /* Added border */
+  backdrop-filter: blur(15px); /* Added blur effect */
 }
 
 .chat-input input {
   flex: 1;
-  min-width: 0;   /* 🔥 यही main fix है */
-}
-
-.chat-input input {
-  flex: 1;
+  min-width: 0; /* 🔥 Prevents overflow on mobile */
   padding: 14px 18px;
   border-radius: 14px;
   border: 1px solid var(--input-border);
@@ -674,6 +673,7 @@ body::after {
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+  flex-shrink: 0; /* Prevents button from shrinking */
 }
 
 .send-btn:hover:not(:disabled) {
@@ -880,65 +880,6 @@ body::after {
 }
 
 /* Mobile Responsive */
-@media (max-width: 768px) {
-  body { 
-    padding: 0;
-    position: fixed;
-    overflow: hidden;
-  }
-  
-  .chat-container {
-    width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
-  }
-  
-  .chat-header {
-    padding: 16px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  
-  .chat-input {
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-  }
-  
-  .message {
-    max-width: 85%;
-    font-size: 14px;
-  }
-  
-  .quick-actions {
-    flex-direction: column;
-    padding: 0 20px;
-  }
-  
-  .quick-btn { width: 100%; }
-  
-  input { font-size: 16px !important; }
-  
-  .name-popup {
-    padding: 32px 24px;
-  }
-  
-  .update-banner {
-    padding: 14px 20px;
-    font-size: 14px;
-    max-width: 95%;
-  }
-  
-  .update-banner-icon {
-    font-size: 20px;
-  }
-}
-
 @media (max-width: 480px) {
   .avatar {
     width: 44px;
@@ -952,6 +893,11 @@ body::after {
     width: 42px;
     height: 42px;
     font-size: 16px;
+  }
+  
+  .chat-box {
+    padding: 20px 16px;
+    padding-bottom: 150px; /* 🔥 Extra space on small screens */
   }
   
   .message {
@@ -973,11 +919,6 @@ body::after {
     font-size: 56px;
   }
 }
-
-.send-btn {
-  flex-shrink: 0;
-}
-
 
 @media (max-width: 768px) {
   .chat-input {
