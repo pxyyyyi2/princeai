@@ -22,7 +22,7 @@ let userName = '';
 
 // Add to script.js - After APP_VERSION constant
 
-const APP_VERSION = '3.0'; // Change this to trigger banner for all users
+const APP_VERSION = '3.2'; // Change this to trigger banner for all users
 
 // Initialize - Update this section
 document.addEventListener('DOMContentLoaded', () => {
@@ -98,8 +98,8 @@ function showFullScreenUpdateBanner() {
           <div class="update-feature">
             <div class="feature-icon">🎭</div>
             <div class="feature-text">
-              <h3>Savage Mode</h3>
-              <p>Funny, helpful & real!</p>
+              <h3>New Preminum Themes</h3>
+              <p>Select preminum themes </p>
             </div>
           </div>
           
@@ -123,7 +123,7 @@ function showFullScreenUpdateBanner() {
             <div class="feature-icon">💎</div>
             <div class="feature-text">
               <h3>Premium Design</h3>
-              <p>Beautiful new theme!</p>
+              <p>Beautiful new Exclusive themes!</p>
             </div>
           </div>
           
@@ -763,39 +763,48 @@ input.addEventListener("keydown", (e) => {
 });
 
 // Theme Toggle Function
-function toggleTheme() {
-  const currentTheme = document.body.getAttribute('data-theme') || 'light';
-  const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-  
-  document.body.setAttribute('data-theme', newTheme);
-  localStorage.setItem('theme', newTheme);
-  
-  // Update theme button icon
-  const themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) {
-    themeBtn.innerHTML = newTheme === 'dark' 
-      ? '<i class="fas fa-sun"></i>' 
-      : '<i class="fas fa-moon"></i>';
-    themeBtn.title = newTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
-  }
-  
+function showThemePicker() {
+  document.getElementById('themePicker').style.display = 'flex';
+  updateActiveTheme();
   sounds.receive();
 }
 
-// Load saved theme on startup
-document.addEventListener('DOMContentLoaded', () => {
-  const savedTheme = localStorage.getItem('theme') || 'light';
-  document.body.setAttribute('data-theme', savedTheme);
-  
-  const themeBtn = document.getElementById('themeBtn');
-  if (themeBtn) {
-    themeBtn.innerHTML = savedTheme === 'dark' 
-      ? '<i class="fas fa-sun"></i>' 
-      : '<i class="fas fa-moon"></i>';
-    themeBtn.title = savedTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+function closeThemePicker() {
+  document.getElementById('themePicker').style.display = 'none';
+  sounds.send();
+}
+
+function changeTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  updateActiveTheme();
+  sounds.receive();
+}
+
+function updateActiveTheme() {
+  const currentTheme = localStorage.getItem('theme') || 'pink-light';
+  document.querySelectorAll('.theme-card').forEach(card => {
+    card.classList.remove('active');
+    if (card.getAttribute('data-theme') === currentTheme) {
+      card.classList.add('active');
+    }
+  });
+}
+
+// Close theme picker when clicking outside
+document.addEventListener('click', (e) => {
+  const themePicker = document.getElementById('themePicker');
+  if (e.target === themePicker) {
+    closeThemePicker();
   }
 });
 
+// Load saved theme on startup
+// Load saved theme on startup
+document.addEventListener('DOMContentLoaded', () => {
+  const savedTheme = localStorage.getItem('theme') || 'pink-light';
+  document.body.setAttribute('data-theme', savedTheme);
+});
 // Preload voices
 if (speechSynthesis.onvoiceschanged !== undefined) {
   speechSynthesis.onvoiceschanged = () => {
