@@ -17,29 +17,6 @@ let userName = '';
 
 const APP_VERSION = '3.2';
 
-
-// Make sure function is globally accessible
-window.closeFullScreenUpdateBanner = function closeFullScreenUpdateBanner() {
-  const banner = document.querySelector('.fullscreen-update-overlay');
-  if (!banner) return;
-  
-  localStorage.setItem('hasSeenUpdateBanner_' + APP_VERSION, 'true');
-  
-  banner.classList.remove('show');
-  banner.classList.add('hide');
-  
-  setTimeout(() => {
-    banner.remove();
-    
-    const userName = localStorage.getItem('userName');
-    if (!userName) {
-      showNamePopup(true);
-    }
-  }, 500);
-  
-  sounds.send();
-};
-
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
@@ -75,8 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Show Full-Screen Update Banner
-// Show Full-Screen Update Banner
 // Show Full-Screen Update Banner
 function showFullScreenUpdateBanner() {
   const banner = document.createElement('div');
@@ -160,11 +135,12 @@ function showFullScreenUpdateBanner() {
   
   document.body.appendChild(banner);
   
-  // IMPORTANT: Attach click handler IMMEDIATELY after adding to DOM
+  // Attach click handler IMMEDIATELY after adding to DOM
   const letsGoBtn = document.getElementById('letsGoBtn');
   if (letsGoBtn) {
     letsGoBtn.addEventListener('click', function(e) {
       e.preventDefault();
+      console.log('Update banner button clicked!');
       closeFullScreenUpdateBanner();
     });
   }
@@ -176,6 +152,7 @@ function showFullScreenUpdateBanner() {
   
   sounds.receive();
 }
+
 // Close Full-Screen Update Banner
 function closeFullScreenUpdateBanner() {
   const banner = document.querySelector('.fullscreen-update-overlay');
@@ -223,36 +200,39 @@ function showNamePopup(isFirstTime = false) {
   
   document.body.appendChild(popup);
   
-  setTimeout(() => {
-    const nameInput = document.getElementById('nameInput');
-    const submitBtn = document.getElementById('submitName');
-    
-    if (nameInput) nameInput.focus();
+  // Attach handlers IMMEDIATELY - no setTimeout!
+  const nameInput = document.getElementById('nameInput');
+  const submitBtn = document.getElementById('submitName');
+  
+  if (nameInput) {
+    nameInput.focus();
     
     // Enter key handler
-    if (nameInput) {
-      nameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          submitName(isFirstTime);
-        }
-      });
-    }
-    
-    // Button click handler
-    if (submitBtn) {
-      submitBtn.addEventListener('click', (e) => {
+    nameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
         e.preventDefault();
         submitName(isFirstTime);
-      });
-    }
-  }, 100);
+      }
+    });
+  }
+  
+  // Button click handler
+  if (submitBtn) {
+    submitBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      console.log('Name popup button clicked!');
+      submitName(isFirstTime);
+    });
+  }
 }
 
 // Submit Name
 function submitName(isFirstTime = false) {
   const nameInput = document.getElementById('nameInput');
-  if (!nameInput) return;
+  if (!nameInput) {
+    console.error('Name input not found!');
+    return;
+  }
   
   const name = nameInput.value.trim();
   
@@ -262,6 +242,7 @@ function submitName(isFirstTime = false) {
     nameInput.style.borderColor = '#ff1493';
     nameInput.placeholder = 'Please enter your name!';
     nameInput.focus();
+    sounds.error();
     return;
   }
   
