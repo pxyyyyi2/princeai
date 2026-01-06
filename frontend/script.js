@@ -53,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Show Full-Screen Update Banner
+// Show Full-Screen Update Banner
 function showFullScreenUpdateBanner() {
   const banner = document.createElement('div');
   banner.className = 'fullscreen-update-overlay';
@@ -123,7 +124,7 @@ function showFullScreenUpdateBanner() {
           </div>
         </div>
         
-        <button class="update-cta" onclick="closeFullScreenUpdateBanner()">
+        <button class="update-cta" id="updateCtaBtn">
           <span>Let's Go!</span>
           <i class="fas fa-arrow-right"></i>
         </button>
@@ -135,13 +136,17 @@ function showFullScreenUpdateBanner() {
   
   document.body.appendChild(banner);
   
+  // Attach event listener AFTER adding to DOM
   setTimeout(() => {
+    const ctaBtn = document.getElementById('updateCtaBtn');
+    if (ctaBtn) {
+      ctaBtn.addEventListener('click', closeFullScreenUpdateBanner);
+    }
     banner.classList.add('show');
   }, 100);
   
   sounds.receive();
 }
-
 // Close Full-Screen Update Banner
 function closeFullScreenUpdateBanner() {
   const banner = document.querySelector('.fullscreen-update-overlay');
