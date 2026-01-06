@@ -264,96 +264,6 @@
   --accent-secondary: #14b8a6;
 }
 
-
-
-
-
-
-
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-
-:root {
-  /* Pink Light Theme (Default) */
-  --bg-gradient-1: #ffeef8;
-  --bg-gradient-2: #ffe0f0;
-  --bg-gradient-3: #ffd4eb;
-  --bg-gradient-4: #ffc4e8;
-  --bg-gradient-5: #ffb3e6;
-  
-  --container-bg: rgba(255, 240, 245, 0.4);
-  --container-bg-2: rgba(255, 228, 240, 0.3);
-  --container-border: rgba(255, 192, 203, 0.5);
-  
-  --header-bg: rgba(255, 240, 245, 0.5);
-  --header-bg-2: rgba(255, 228, 240, 0.4);
-  
-  --chat-box-bg: linear-gradient(135deg, rgba(255, 182, 193, 0.15), rgba(255, 192, 203, 0.1));
-  
-  --text-primary: #4a1942;
-  --text-secondary: rgba(139, 69, 104, 0.9);
-  --text-muted: rgba(139, 69, 104, 0.7);
-  
-  --btn-bg: linear-gradient(135deg, rgba(255, 182, 193, 0.4), rgba(255, 192, 203, 0.3));
-  --btn-border: rgba(255, 105, 180, 0.2);
-  --btn-hover: linear-gradient(135deg, rgba(255, 105, 180, 0.4), rgba(255, 20, 147, 0.3));
-  
-  --input-bg: rgba(255, 255, 255, 0.6);
-  --input-border: rgba(255, 105, 180, 0.4);
-  --input-focus-bg: rgba(255, 255, 255, 0.7);
-  
-  --message-bot-bg: rgba(255, 255, 255, 0.6);
-  --message-bot-border: rgba(255, 192, 203, 0.5);
-  
-  --quick-btn-bg: rgba(255, 255, 255, 0.4);
-  --quick-btn-border: rgba(255, 105, 180, 0.3);
-  
-  --scrollbar-track: rgba(255, 255, 255, 0.1);
-  
-  --bubble-1: rgba(255, 105, 180, 0.3);
-  --bubble-2: rgba(255, 182, 193, 0.4);
-}
-
-[data-theme="dark"] {
-  /* Dark Theme with Pink Accents */
-  --bg-gradient-1: #0a0a0f;
-  --bg-gradient-2: #12121a;
-  --bg-gradient-3: #1a1a2e;
-  --bg-gradient-4: #1f1f35;
-  --bg-gradient-5: #252541;
-  
-  --container-bg: rgba(30, 30, 50, 0.6);
-  --container-bg-2: rgba(35, 35, 55, 0.5);
-  --container-border: rgba(255, 105, 180, 0.3);
-  
-  --header-bg: rgba(30, 30, 50, 0.7);
-  --header-bg-2: rgba(35, 35, 55, 0.6);
-  
-  --chat-box-bg: linear-gradient(135deg, rgba(20, 20, 35, 0.3), rgba(25, 25, 40, 0.2));
-  
-  --text-primary: #ffffff;
-  --text-secondary: #e0e0e0;
-  --text-muted: rgba(255, 255, 255, 0.6);
-  
-  --btn-bg: linear-gradient(135deg, rgba(255, 105, 180, 0.2), rgba(139, 69, 104, 0.2));
-  --btn-border: rgba(255, 105, 180, 0.3);
-  --btn-hover: linear-gradient(135deg, rgba(255, 105, 180, 0.3), rgba(255, 20, 147, 0.3));
-  
-  --input-bg: rgba(30, 30, 50, 0.6);
-  --input-border: rgba(255, 105, 180, 0.4);
-  --input-focus-bg: rgba(35, 35, 55, 0.7);
-  
-  --message-bot-bg: rgba(40, 40, 60, 0.6);
-  --message-bot-border: rgba(255, 105, 180, 0.3);
-  
-  --quick-btn-bg: rgba(40, 40, 60, 0.5);
-  --quick-btn-border: rgba(255, 105, 180, 0.3);
-  
-  --scrollbar-track: rgba(0, 0, 0, 0.3);
-  
-  --bubble-1: rgba(255, 105, 180, 0.15);
-  --bubble-2: rgba(139, 69, 104, 0.2);
-}
-
 * {
   margin: 0;
   padding: 0;
@@ -539,11 +449,9 @@ body::after {
 }
 
 /* Chat Box */
-/* Chat Box */
 .chat-box {
   flex: 1;
   padding: 24px;
-  padding-bottom: 120px;  /* ⭐ ADD THIS LINE */
   overflow-y: auto;
   scroll-behavior: smooth;
   background: var(--chat-box-bg);
@@ -722,11 +630,6 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 20px 24px;
-  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));
-  backdrop-filter: blur(15px);
-  border-top: 1px solid rgba(255, 105, 180, 0.3);
-  transition: all 0.5s ease;
 }
 
 .chat-input input {
@@ -977,8 +880,6 @@ body::after {
 }
 
 /* Mobile Responsive */
-
-/* Mobile Responsive */
 @media (max-width: 768px) {
   body { 
     padding: 0;
@@ -986,31 +887,29 @@ body::after {
     overflow: hidden;
   }
   
-
   .chat-container {
     width: 100vw;
     height: 100vh;
     max-height: 100vh;
     border-radius: 0;
-    display: flex;           /* ✅ ADD */
-    flex-direction: column;  /* ✅ ADD */
+    position: fixed;
+    top: 0;
+    left: 0;
   }
   
   .chat-header {
     padding: 16px 20px;
-    flex-shrink: 0;  /* ✅ ADD */
+    position: sticky;
+    top: 0;
+    z-index: 10;
   }
-
-  .chat-box {
-    flex: 1;         /* ✅ ADD */
-    padding: 20px;
-    overflow-y: auto;
-  }
-
+  
   .chat-input {
-    padding: 16px 20px;
-    flex-shrink: 0;  /* ✅ ADD */
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
   }
+  
   .message {
     max-width: 85%;
     font-size: 14px;
@@ -1418,8 +1317,6 @@ body::after {
   50% { transform: translate(30px, 30px); }
 }
 
-
-/* Theme Picker Modal */
 .theme-picker-overlay {
   position: fixed;
   top: 0;
@@ -1527,7 +1424,7 @@ body::after {
 }
 
 .theme-card.active .theme-check {
-  display: flex;
+  display: block;
 }
 
 .theme-preview {
@@ -1535,6 +1432,8 @@ body::after {
   height: 80px;
   border-radius: 8px;
   margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
 }
 
 .pink-light-preview {
@@ -1576,7 +1475,7 @@ body::after {
   color: var(--text-primary);
 }
 
-theme-check {
+.theme-check {
   display: none;
   position: absolute;
   top: 8px;
@@ -1606,3 +1505,6 @@ theme-check {
     height: 60px;
   }
 }
+
+/* Rest of the original CSS continues here... */
+/* (Keep all the existing CSS from your original file) */
