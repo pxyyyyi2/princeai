@@ -539,9 +539,11 @@ body::after {
 }
 
 /* Chat Box */
+/* Chat Box */
 .chat-box {
   flex: 1;
   padding: 24px;
+  padding-bottom: 120px;  /* ⭐ ADD THIS LINE */
   overflow-y: auto;
   scroll-behavior: smooth;
   background: var(--chat-box-bg);
@@ -720,6 +722,16 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 20px 24px;                           /* ⭐ ADD */
+  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));  /* ⭐ ADD */
+  backdrop-filter: blur(15px);                  /* ⭐ ADD */
+  border-top: 1px solid rgba(255, 105, 180, 0.3);  /* ⭐ ADD */
+  transition: all 0.5s ease;                    /* ⭐ ADD */
+  position: fixed;                              /* ⭐ ADD */
+  bottom: 0;                                    /* ⭐ ADD */
+  left: 0;                                      /* ⭐ ADD */
+  right: 0;                                     /* ⭐ ADD */
+  z-index: 100;                                 /* ⭐ ADD */
 }
 
 .chat-input input {
@@ -987,19 +999,31 @@ body::after {
     left: 0;
   }
   
-  .chat-header {
-    padding: 16px 20px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  
-  .chat-input {
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
-  }
-  
+ .chat-header {
+  padding: 16px 20px;
+  position: fixed;     /* ✅ CHANGED */
+  top: 0;
+  left: 0;             /* ⭐ ADD */
+  right: 0;            /* ⭐ ADD */
+  z-index: 10;
+  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));  /* ⭐ ADD */
+  backdrop-filter: blur(15px);  /* ⭐ ADD */
+}
+
+.chat-box {
+  padding-top: 100px;      /* ⭐ ADD THIS WHOLE BLOCK */
+  padding-bottom: 140px;   /* ⭐ ADD */
+}
+
+.chat-input {
+  padding: 16px 20px;
+  position: fixed;         /* ✅ CHANGED */
+  bottom: 0;
+  left: 0;                 /* ⭐ ADD */
+  right: 0;                /* ⭐ ADD */
+  z-index: 100;
+  overflow: visible;       /* ⭐ ADD */
+}
   .message {
     max-width: 85%;
     font-size: 14px;
