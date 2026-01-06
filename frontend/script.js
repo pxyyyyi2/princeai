@@ -13,7 +13,7 @@ let isRecording = false;
 let recognition = null;
 let isSpeakingEnabled = false;
 let currentUtterance = null;
-let userName = '';
+let userName = 'Friend';
 
 const APP_VERSION = '3.2';
 
@@ -28,18 +28,13 @@ document.addEventListener('DOMContentLoaded', () => {
   if (savedVersion !== APP_VERSION || !hasSeenUpdateBanner) {
     showFullScreenUpdateBanner();
     localStorage.setItem('appVersion', APP_VERSION);
-  }
-  
-  userName = localStorage.getItem('userName');
-  if (!userName) {
-    if (!hasSeenUpdateBanner && savedVersion) {
-      // User exists but needs to see update banner first
-    } else {
-      showNamePopup(true);
-    }
   } else {
     initializeApp();
   }
+  
+  // Set default username
+  userName = localStorage.getItem('userName') || 'Friend';
+  localStorage.setItem('userName', userName);
   
   const savedTheme = localStorage.getItem('theme') || 'pink-light';
   document.body.setAttribute('data-theme', savedTheme);
@@ -165,128 +160,22 @@ function closeFullScreenUpdateBanner() {
   
   setTimeout(() => {
     banner.remove();
+    initializeApp();
     
-    const userName = localStorage.getItem('userName');
-    if (!userName) {
-      showNamePopup(true);
-    }
+    // Show welcome banner after closing update banner
+    setTimeout(() => {
+      showFirstTimeWelcomeBanner();
+    }, 500);
+    
+    // Speak greeting if TTS is enabled
+    setTimeout(() => {
+      if (isSpeakingEnabled) {
+        speakText("Heyy! Main Prince hoon. Kaise help kar sakta hoon?");
+      }
+    }, 500);
   }, 500);
   
   sounds.send();
-}
-
-// Show Name Popup
-// Show Name Popup
-function showNamePopup(isFirstTime = false) {
-  const popup = document.createElement('div');
-  popup.className = 'name-popup-overlay';
-  popup.innerHTML = `
-    <div class="name-popup">
-      <div class="popup-icon">👋</div>
-      <h2>Welcome to Prince AI!</h2>
-      <p>Apna naam batao!</p>
-      <input 
-        type="text" 
-        id="nameInput" 
-        placeholder="Your name..." 
-        maxlength="20"
-        autocomplete="off"
-      />
-      <button id="submitName" class="submit-name-btn" type="button">
-        <i class="fas fa-arrow-right"></i> Let's Go!
-      </button>
-      <p class="privacy-note">Your name is stored locally on your device only</p>
-    </div>
-  `;
-  
-  document.body.appendChild(popup);
-  
-  // Use setTimeout to ensure DOM is ready
-  setTimeout(() => {
-    const nameInput = document.getElementById('nameInput');
-    const submitBtn = document.getElementById('submitName');
-    
-    console.log('Setting up name popup handlers...', {nameInput, submitBtn});
-    
-    if (nameInput) {
-      nameInput.focus();
-      
-      // Enter key handler
-      nameInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          console.log('Enter pressed in name input');
-          submitName(isFirstTime);
-        }
-      });
-    }
-    
-    // Button click handler
-    if (submitBtn) {
-      submitBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Name popup button clicked!');
-        submitName(isFirstTime);
-      });
-    } else {
-      console.error('Submit button not found!');
-    }
-  }, 50);
-}
-// Submit Name
-function submitName(isFirstTime = false) {
-  const nameInput = document.getElementById('nameInput');
-  if (!nameInput) {
-    console.error('Name input not found!');
-    return;
-  }
-  
-  const name = nameInput.value.trim();
-  
-  console.log('Submitting name:', name, 'First time:', isFirstTime);
-  
-  if (!name) {
-    nameInput.style.borderColor = '#ff1493';
-    nameInput.placeholder = 'Please enter your name!';
-    nameInput.focus();
-    sounds.error();
-    return;
-  }
-  
-  userName = name;
-  localStorage.setItem('userName', userName);
-  
-  const gender = detectGender(name);
-  localStorage.setItem('userGender', gender);
-  
-  const popup = document.querySelector('.name-popup-overlay');
-  const popupBox = document.querySelector('.name-popup');
-  
-  if (popupBox) {
-    popupBox.style.transform = 'scale(0.9)';
-    popupBox.style.opacity = '0';
-  }
-  
-  setTimeout(() => {
-    if (popup) popup.remove();
-    initializeApp();
-    
-    if (isFirstTime) {
-      setTimeout(() => {
-        showFirstTimeWelcomeBanner();
-      }, 500);
-    }
-    
-    setTimeout(() => {
-      if (isSpeakingEnabled) {
-        const greeting = gender === 'female' 
-          ? `Heyy😺 ${userName}! Main Prince hoon. Kaise help kar sakta hoon?` 
-          : `Namaste ${userName} bhai! Main Prince hoon. Kaise help kar sakta hoon?`;
-        speakText(greeting);
-      }
-    }, 500);
-  }, 300);
 }
 
 // Show First Time Welcome Banner
@@ -315,31 +204,6 @@ function showFirstTimeWelcomeBanner() {
   }, 5000);
 }
 
-// Detect Gender from Name
-function detectGender(name) {
-  const nameLower = name.toLowerCase();
-  
-  const femaleEndings = ['a', 'i', 'ya', 'ka', 'sha', 'na', 'ta', 'la', 'ra'];
-  
-  const femaleNames = [
-    'priya', 'riya', 'diya', 'ananya', 'isha', 'neha', 'pooja', 'shreya',
-    'kavya', 'divya', 'sneha', 'sakshi', 'nisha', 'tanvi', 'simran', 'ritika',
-    'anjali', 'megha', 'swati', 'jyoti', 'preeti', 'sonal', 'shweta', 'komal',
-    'ayesha', 'fatima', 'sana', 'zara', 'alisha', 'sophia', 'emily', 'sarah',
-    'jessica', 'maria', 'anna', 'lisa', 'karen', 'nancy', 'linda', 'susan'
-  ];
-  
-  if (femaleNames.some(fn => nameLower.includes(fn))) {
-    return 'female';
-  }
-  
-  if (femaleEndings.some(ending => nameLower.endsWith(ending) && nameLower.length > 3)) {
-    return 'female';
-  }
-  
-  return 'male';
-}
-
 // Initialize App
 function initializeApp() {
   showWelcomeMessage();
@@ -353,7 +217,7 @@ function showWelcomeMessage() {
   const welcomeHTML = `
     <div class="welcome-message">
       <div class="welcome-icon">👋</div>
-      <h2>Heyy😺${userName ? ' ' + userName : ''}!</h2>
+      <h2>Heyy😺!</h2>
       <p>Main Prince hoon 🚀</p>
       <p class="welcome-subtext">Koi bhi doubt ho ya help chahiye, bas puchlo!</p>
       <div class="quick-actions">
@@ -601,7 +465,7 @@ async function sendMessage() {
   showTyping();
 
   try {
-    const userName = localStorage.getItem('userName') || 'anonymous';
+    const userName = localStorage.getItem('userName') || 'User';
     const userGender = localStorage.getItem('userGender') || 'male';
     
     const response = await fetch("/chat", {
