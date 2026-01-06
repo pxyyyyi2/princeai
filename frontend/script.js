@@ -176,6 +176,7 @@ function closeFullScreenUpdateBanner() {
 }
 
 // Show Name Popup
+// Show Name Popup
 function showNamePopup(isFirstTime = false) {
   const popup = document.createElement('div');
   popup.className = 'name-popup-overlay';
@@ -191,7 +192,7 @@ function showNamePopup(isFirstTime = false) {
         maxlength="20"
         autocomplete="off"
       />
-      <button id="submitName" class="submit-name-btn">
+      <button id="submitName" class="submit-name-btn" type="button">
         <i class="fas fa-arrow-right"></i> Let's Go!
       </button>
       <p class="privacy-note">Your name is stored locally on your device only</p>
@@ -200,32 +201,39 @@ function showNamePopup(isFirstTime = false) {
   
   document.body.appendChild(popup);
   
-  // Attach handlers IMMEDIATELY - no setTimeout!
-  const nameInput = document.getElementById('nameInput');
-  const submitBtn = document.getElementById('submitName');
-  
-  if (nameInput) {
-    nameInput.focus();
+  // Use setTimeout to ensure DOM is ready
+  setTimeout(() => {
+    const nameInput = document.getElementById('nameInput');
+    const submitBtn = document.getElementById('submitName');
     
-    // Enter key handler
-    nameInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+    console.log('Setting up name popup handlers...', {nameInput, submitBtn});
+    
+    if (nameInput) {
+      nameInput.focus();
+      
+      // Enter key handler
+      nameInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          console.log('Enter pressed in name input');
+          submitName(isFirstTime);
+        }
+      });
+    }
+    
+    // Button click handler
+    if (submitBtn) {
+      submitBtn.addEventListener('click', function(e) {
         e.preventDefault();
+        e.stopPropagation();
+        console.log('Name popup button clicked!');
         submitName(isFirstTime);
-      }
-    });
-  }
-  
-  // Button click handler
-  if (submitBtn) {
-    submitBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      console.log('Name popup button clicked!');
-      submitName(isFirstTime);
-    });
-  }
+      });
+    } else {
+      console.error('Submit button not found!');
+    }
+  }, 50);
 }
-
 // Submit Name
 function submitName(isFirstTime = false) {
   const nameInput = document.getElementById('nameInput');
