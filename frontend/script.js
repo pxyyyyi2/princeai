@@ -17,6 +17,29 @@ let userName = '';
 
 const APP_VERSION = '3.2';
 
+
+// Make sure function is globally accessible
+window.closeFullScreenUpdateBanner = function closeFullScreenUpdateBanner() {
+  const banner = document.querySelector('.fullscreen-update-overlay');
+  if (!banner) return;
+  
+  localStorage.setItem('hasSeenUpdateBanner_' + APP_VERSION, 'true');
+  
+  banner.classList.remove('show');
+  banner.classList.add('hide');
+  
+  setTimeout(() => {
+    banner.remove();
+    
+    const userName = localStorage.getItem('userName');
+    if (!userName) {
+      showNamePopup(true);
+    }
+  }, 500);
+  
+  sounds.send();
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Page loaded, initializing...');
@@ -52,6 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Show Full-Screen Update Banner
 // Show Full-Screen Update Banner
 // Show Full-Screen Update Banner
 function showFullScreenUpdateBanner() {
@@ -124,7 +148,7 @@ function showFullScreenUpdateBanner() {
           </div>
         </div>
         
-        <button class="update-cta" id="updateCtaBtn">
+        <button class="update-cta" id="letsGoBtn">
           <span>Let's Go!</span>
           <i class="fas fa-arrow-right"></i>
         </button>
@@ -136,12 +160,17 @@ function showFullScreenUpdateBanner() {
   
   document.body.appendChild(banner);
   
-  // Attach event listener AFTER adding to DOM
+  // IMPORTANT: Attach click handler IMMEDIATELY after adding to DOM
+  const letsGoBtn = document.getElementById('letsGoBtn');
+  if (letsGoBtn) {
+    letsGoBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      closeFullScreenUpdateBanner();
+    });
+  }
+  
+  // Then add the show class
   setTimeout(() => {
-    const ctaBtn = document.getElementById('updateCtaBtn');
-    if (ctaBtn) {
-      ctaBtn.addEventListener('click', closeFullScreenUpdateBanner);
-    }
     banner.classList.add('show');
   }, 100);
   
