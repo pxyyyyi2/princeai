@@ -722,16 +722,11 @@ body::after {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 20px 24px;                           /* ⭐ ADD */
-  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));  /* ⭐ ADD */
-  backdrop-filter: blur(15px);                  /* ⭐ ADD */
-  border-top: 1px solid rgba(255, 105, 180, 0.3);  /* ⭐ ADD */
-  transition: all 0.5s ease;                    /* ⭐ ADD */
-  position: fixed;                              /* ⭐ ADD */
-  bottom: 0;                                    /* ⭐ ADD */
-  left: 0;                                      /* ⭐ ADD */
-  right: 0;                                     /* ⭐ ADD */
-  z-index: 100;                                 /* ⭐ ADD */
+  padding: 20px 24px;
+  background: linear-gradient(135deg, var(--header-bg), var(--header-bg-2));
+  backdrop-filter: blur(15px);
+  border-top: 1px solid rgba(255, 105, 180, 0.3);
+  transition: all 0.5s ease;
 }
 
 .chat-input input {
@@ -991,46 +986,31 @@ body::after {
     overflow: hidden;
   }
   
+
   .chat-container {
     width: 100vw;
     height: 100vh;
     max-height: 100vh;
     border-radius: 0;
-    position: fixed;
-    top: 0;
-    left: 0;
+    display: flex;           /* ✅ ADD */
+    flex-direction: column;  /* ✅ ADD */
   }
   
   .chat-header {
     padding: 16px 20px;
-    position: sticky;  /* ✅ CHANGED */
-    top: 0;
-    z-index: 10;
+    flex-shrink: 0;  /* ✅ ADD */
   }
 
   .chat-box {
-    padding-top: 20px;      /* ✅ NORMAL PADDING */
-    padding-bottom: 120px;  /* ✅ Space for input */
+    flex: 1;         /* ✅ ADD */
+    padding: 20px;
+    overflow-y: auto;
   }
 
   .chat-input {
     padding: 16px 20px;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
+    flex-shrink: 0;  /* ✅ ADD */
   }
-
-.chat-input {
-  padding: 16px 20px;
-  position: fixed;         /* ✅ CHANGED */
-  bottom: 0;
-  left: 0;                 /* ⭐ ADD */
-  right: 0;                /* ⭐ ADD */
-  z-index: 100;
-  overflow: visible;       /* ⭐ ADD */
-}
   .message {
     max-width: 85%;
     font-size: 14px;
