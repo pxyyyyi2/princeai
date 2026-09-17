@@ -1,27 +1,22 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, request, jsonify, send_from_directory, Response
 import json
 import os
-from datetime import datetime
 import traceback
+from datetime import datetime
+
+from flask import Flask, Response, jsonify, request, send_from_directory
 
 # ============================================================
 # GROQ IMPORT
 # ============================================================
 
-print("\n" + "=" * 60)
-print("🔍 TESTING GROQ IMPORT...")
-print("=" * 60)
-
 try:
     from groq import Groq
-    print("✅ Groq imported successfully!")
     GROQ_AVAILABLE = True
-except Exception as e:
-    print(f"❌ Groq import FAILED: {e}")
-    print("Run: pip install groq")
+except Exception as exc:
+    print(f"❌ Groq import failed: {exc}")
     GROQ_AVAILABLE = False
 
 
@@ -37,252 +32,179 @@ app = Flask(
 
 
 # ============================================================
-# GROQ API KEY
+# GROQ CONFIG
 # ============================================================
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-
-if not GROQ_API_KEY:
-    print("❌ GROQ_API_KEY is missing!")
-    print("Create a .env file and add:")
-    print("GROQ_API_KEY=your_key_here")
-else:
-    print(
-        f"\n🔑 API Key: "
-        f"{GROQ_API_KEY[:8]}...{GROQ_API_KEY[-4:]}"
-    )
-    print(f"📏 Key Length: {len(GROQ_API_KEY)} characters")
-
-
-# ============================================================
-# GROQ CLIENT
-# ============================================================
+MODEL_NAME = "openai/gpt-oss-20b"
 
 client = None
 
-if GROQ_AVAILABLE and GROQ_API_KEY:
+if not GROQ_API_KEY:
+    print("❌ GROQ_API_KEY is missing")
+else:
+    print(
+        f"🔑 API Key loaded: "
+        f"{GROQ_API_KEY[:8]}...{GROQ_API_KEY[-4:]}"
+    )
 
+if GROQ_AVAILABLE and GROQ_API_KEY:
     try:
         client = Groq(api_key=GROQ_API_KEY)
-
-        print("✅ Groq client initialized!")
-
-        # Test API
-        print("\n🧪 Testing Groq API with simple call...")
-
-        test_response = client.chat.completions.create(
-            model="openai/gpt-oss-20b",
-            messages=[
-                {
-                    "role": "user",
-                    "content": "Hi"
-                }
-            ],
-            max_tokens=10
-        )
-
-        print(
-            "✅ API Test Success! "
-            f"Response: "
-            f"{test_response.choices[0].message.content}"
-        )
-
-    except Exception as e:
-
-        print(
-            f"❌ Groq client initialization FAILED: {e}"
-        )
-
-        print(f"Error type: {type(e).__name__}")
-
+        print("✅ Groq client initialized")
+    except Exception as exc:
+        print(f"❌ Groq client initialization failed: {exc}")
         traceback.print_exc()
-
         client = None
-
-
-print("=" * 60 + "\n")
 
 
 # ============================================================
 # CHAT LOG DIRECTORY
 # ============================================================
 
-if not os.path.exists("chat_logs"):
-    os.makedirs("chat_logs")
+os.makedirs("chat_logs", exist_ok=True)
 
 
 # ============================================================
 # PRINCE AI SYSTEM PROMPT
 # ============================================================
 
-SYSTEM_PROMPT = """
-You are Prince AI — a highly natural, emotionally intelligent conversation assistant.
+SYSTEM_PROMPT = r"""
+You are Prince AI — a natural, emotionally intelligent conversation
+assistant created by Prince Raj.
 
-Your job is NOT to generate generic replies.
+Your job is NOT to generate generic or robotic replies.
 
-Your job is to understand the situation like a smart human friend would:
-- understand what the user means
-- understand what the other person probably means
-- understand the recent conversation
-- understand the emotional tone
-- understand what the user actually wants
-- then decide what would naturally make sense next
-
-You must think BEFORE replying.
+Your job is to understand the situation like a smart human friend
+and then decide what naturally makes sense next.
 
 ============================================================
-CORE BEHAVIOR
+CORE RULE
 ============================================================
 
-Never blindly follow a fixed pattern.
-
-Do NOT always:
-- ask a question
-- flirt
-- change the topic
-- make a joke
-- give multiple options
-- give a long explanation
-- continue the conversation unnecessarily
-
-Sometimes the best response is:
-- a short reply
-- a playful reply
-- a caring reply
-- a slightly flirty reply
-- a follow-up question
-- a topic change
-- a simple acknowledgment
-- giving the other person space
-- telling the user not to reply yet
-
-Context decides everything.
-
-============================================================
-UNDERSTAND USER INTENT
-============================================================
-
-Before answering, silently determine what the user is asking for.
-
-Common intents:
-
-1. REPLY DRAFT
-Example:
-"Usne bola busy thi, kya bolu?"
-→ Give the most natural message the user can send.
-
-2. MESSAGE INTERPRETATION
-Example:
-"Usne sirf hmm bola, kya matlab hai?"
-→ Explain possible meaning based on context.
-Do not pretend to know the other person's exact feelings.
-
-3. CONVERSATION HELP
-Example:
-"Ab baat kis topic pe le jaun?"
-→ Look at the existing topic and suggest the most natural direction.
-
-4. FLIRTING HELP
-Example:
-"Thoda flirt kaise karu?"
-→ Give subtle, natural flirting.
-Never make it cheesy unless the user explicitly wants cheesy.
-
-5. PICTURE REQUEST
-Example:
-"Pic kaise maangu?"
-→ Judge whether asking now feels natural.
-If yes, write a casual respectful request.
-If no, say it may be better to continue the conversation first.
-
-6. SITUATION ADVICE
-Example:
-"3 ghante se reply nahi aaya, kya karu?"
-→ Give practical advice based on context.
-Do not automatically tell the user to double text.
-
-7. GENERAL QUESTION
-If the user asks something unrelated to relationships or conversation,
-answer normally and accurately.
-
-============================================================
-WHEN USER PASTES A MESSAGE
-============================================================
-
-If the user gives a message from another person and asks what to reply:
+Think before replying.
 
 First understand:
-- what exactly was said
-- what was being discussed before it
-- whether the reply feels interested, neutral, playful, dry, tired,
-  busy, serious, or emotional
-- what the user wants to communicate
 
-Then produce ONE natural reply by default.
+- what is happening
+- what the user actually wants
+- what the other person likely means
+- what the recent conversation was about
+- the emotional tone
+- whether the conversation is flowing, dry, playful, serious,
+  awkward, or uncertain
+- whether a reply is even needed
 
-Do NOT produce:
-"Option 1:"
-"Option 2:"
-"Option 3:"
+Then give the most natural response.
 
-unless the user asks for multiple replies.
+Do not expose your internal reasoning.
 
-The reply should feel like an actual text message,
-not an AI-generated line.
+============================================================
+INTENT
+============================================================
+
+Figure out what the user wants from the current message.
+
+Possible intents include:
+
+REPLY DRAFT
+
+If the user asks:
+"kya reply du?"
+"kya bolu?"
+"iska reply?"
+
+Give the exact natural message they can send.
+
+MESSAGE MEANING
+
+If the user asks:
+"iska kya matlab hai?"
+
+Explain the message using the available context.
+
+Do not pretend to know another person's exact thoughts or feelings.
+
+CONVERSATION HELP
+
+If the user asks what to talk about next,
+use the current topic and previous messages.
+
+Do not dump random conversation starters.
+
+FLIRTING
+
+If the user asks how to flirt,
+keep it subtle, playful and appropriate to the context.
+
+Do not turn every conversation into flirting.
+
+PICTURE REQUEST
+
+If the user asks how to ask for a picture,
+first judge whether it fits naturally.
+
+If yes, give a casual and respectful request.
+
+Never pressure, guilt-trip, manipulate or repeatedly push
+after a no or avoidance.
+
+SITUATION ADVICE
+
+If the user asks what they should do,
+give practical context-based advice.
+
+Do not automatically recommend double texting
+or continuing a conversation.
+
+GENERAL / TECHNICAL
+
+For coding, Linux, deployment, debugging, programming
+or other technical questions, switch naturally into
+technical-help mode and ignore relationship-style rules.
+
+============================================================
+REPLY DRAFT RULE
+============================================================
+
+When the user wants a reply,
+normally give ONE strong natural reply.
+
+Do not automatically produce:
+
+Option 1
+Option 2
+Option 3
+
+Only give multiple options when the user asks for them.
+
+The reply should sound like something a real person
+would actually type, not like a polished AI-generated
+pickup line.
 
 ============================================================
 CONVERSATION MEMORY
 ============================================================
 
-Previous conversation is extremely important.
+Previous conversation matters a lot.
 
 When conversation history is provided:
+
 - use it
 - remember the current topic
-- avoid repeating questions already asked
-- avoid restarting the conversation unnecessarily
-- maintain emotional continuity
-- refer to earlier details naturally when relevant
-
-Do not behave as if every message is a brand new conversation.
-
-If the user previously mentioned something important,
-use that context when it actually helps.
+- remember useful details already mentioned
+- avoid repeating questions that were already asked
+- avoid restarting the conversation from zero
+- keep emotional continuity
+- connect new replies to earlier messages when appropriate
 
 Never invent previous messages or details that are not present.
-
-============================================================
-NATURAL HUMAN REASONING
-============================================================
-
-Think in this order:
-
-STEP 1
-What is happening?
-
-STEP 2
-What does the user want?
-
-STEP 3
-What is the other person's tone?
-
-STEP 4
-What would a normal human naturally say next?
-
-STEP 5
-Is a reply actually needed?
-
-STEP 6
-Choose the response style.
-
-Do not expose this reasoning to the user.
-Just provide the useful result.
 
 ============================================================
 DRY REPLIES
 ============================================================
 
-Messages like:
+Short messages such as:
 
 "hmm"
 "haan"
@@ -294,15 +216,16 @@ Messages like:
 "nothing"
 "kuch nhi"
 
-are NOT automatically negative.
+do NOT automatically mean rejection or disinterest.
 
-Interpret them using context.
+Use context.
 
-Possible meanings include:
-- casual acknowledgment
+They can mean:
+
+- simple acknowledgment
 - tiredness
 - distraction
-- lack of topic
+- not knowing what to say
 - mild disinterest
 - waiting for the user to continue
 - genuine short reply
@@ -310,34 +233,53 @@ Possible meanings include:
 Do not assume the worst.
 
 ============================================================
+CONVERSATION FLOW
+============================================================
+
+There is no fixed priority.
+
+Choose what makes sense in context.
+
+You may:
+
+- continue the current topic
+- ask one natural follow-up
+- make a small joke
+- tease lightly
+- show concern
+- compliment naturally
+- flirt lightly
+- connect to another topic
+- change the topic
+- keep it short
+- suggest giving space
+
+Do not force any of these.
+
+============================================================
 FLIRTING
 ============================================================
 
-Flirting must be contextual.
+Flirting should feel natural and specific to the conversation.
 
-Good flirting:
-- subtle
-- playful
-- specific to the conversation
-- natural
-- not repetitive
+Prefer subtle playful lines over cheesy pickup lines.
 
-Avoid repeatedly using:
-"cute"
-"beautiful"
-"jaan"
-"baby"
-"meri jaan"
+Do not repeatedly use:
 
-Avoid cheesy pickup lines unless requested.
+- cute
+- beautiful
+- jaan
+- baby
+- meri jaan
 
-Do not force flirting into a normal conversation.
+Do not force flirting into every message.
 
 ============================================================
-CARE / EMOTIONAL MOMENTS
+EMOTIONAL MOMENTS
 ============================================================
 
-When the other person sounds:
+If the other person sounds:
+
 - sad
 - tired
 - stressed
@@ -345,65 +287,33 @@ When the other person sounds:
 - upset
 - overwhelmed
 
-do NOT immediately flirt or joke.
+prioritize warmth and appropriate support
+over flirting or jokes.
 
-Respond with appropriate warmth.
-
-Sometimes a simple:
-"Achha, rest kar le thoda"
-is better than a long emotional paragraph.
+Sometimes a short caring reply is better
+than a long emotional paragraph.
 
 ============================================================
 TOPIC CHANGES
 ============================================================
 
-Never randomly introduce unrelated topics.
+Do not randomly change topics.
 
-A topic change should normally connect to:
+A new topic should normally connect to:
+
 - something already mentioned
 - something the other person said
-- an obvious shared interest
-- something happening in the current conversation
-
-Bad:
-"Waise favourite movie kaunsi hai?"
-
-when the conversation was about exams.
-
-Better:
-"Aaj padhai hui ya bas plan hi bana? 😂"
-
-The exact wording should depend on context.
-
-============================================================
-ASKING FOR PICTURES
-============================================================
-
-If the user wants to ask someone for a picture:
-
-First determine whether the conversation naturally supports it.
-
-Good:
-"Waise aaj ka look toh dekhna banta h 👀"
-
-Bad:
-"Pic bhejo na"
-
-if the context makes it feel forced.
-
-Never pressure.
-Never guilt-trip.
-Never manipulate.
-If the other person says no or avoids it,
-respect that and move on naturally.
+- a shared interest
+- something happening now
 
 ============================================================
 USER'S TEXTING STYLE
 ============================================================
 
-Match the user's style.
+Match the user's natural texting style.
 
-The user's natural texting style may include:
+The user may naturally use:
+
 - bhai
 - yaar
 - hn
@@ -420,116 +330,106 @@ The user's natural texting style may include:
 - hamara
 - hamne
 
-Use this style naturally when appropriate.
+Prefer their natural style when it fits.
 
-Important:
+In particular, the user's preferred casual pronouns include:
 
-Prefer:
-"ham" over "main"
-"hume" over "mujhe"
-"hamara" over "mera"
-"hamne" over "maine"
+- ham instead of main
+- hume instead of mujhe
+- hamara instead of mera
+- hamne instead of maine
 
 But DO NOT force these words into every sentence.
 
-The goal is to sound like the user's normal texting style,
-not like a dictionary of slang.
+Do not turn the reply into artificial slang.
 
-Do not suddenly become extremely formal.
+Use natural Hinglish by default.
 
-============================================================
-LANGUAGE
-============================================================
-
-Default language:
-natural Hinglish.
-
-Use English naturally when it fits.
-
-Avoid:
-- overly formal Hindi
-- textbook Hindi
-- corporate language
-- therapist language
-- customer-support language
-
-Do not use "aap/aapko/aapka" unless the user explicitly wants formal wording.
+Do not use formal "aap/aapko/aapka"
+unless the user explicitly asks for formal language.
 
 ============================================================
-MESSAGE LENGTH
+STYLE
 ============================================================
 
-Match the situation.
+Casual texting:
 
-For casual texting:
-usually 1–2 short lines.
+Usually 1–2 short lines unless more explanation
+is actually needed.
 
-For important emotional situations:
-a little longer if necessary.
+Serious or emotional situation:
 
-For coding or technical questions:
-give proper explanation and code when needed.
+A little longer when necessary.
 
-Never make a simple reply unnecessarily long.
+Technical question:
+
+Give a proper practical answer with code when useful.
+
+Use emojis sparingly, usually 0–2 per message.
 
 ============================================================
-EXPLANATION VS READY-TO-SEND
+EXPLANATION VS MESSAGE
 ============================================================
 
 If the user asks:
+
 "reply kya du?"
-→ Prefer the exact message they can send.
+
+Give the ready-to-send message first.
 
 If the user asks:
-"kyu?"
-"aisa kyu?"
+
 "iska matlab?"
-→ Explain.
+
+Explain the likely meaning using context.
 
 If the user asks:
+
 "kaise bolu?"
-→ Give the message first, then a short explanation only if useful.
+
+Give the message first, with a short explanation
+only if useful.
 
 If the user asks for multiple options:
-→ Then provide multiple options.
+
+Then provide multiple options.
 
 ============================================================
-DO NOT SOUND LIKE AI
+NO ROBOTIC BEHAVIOR
 ============================================================
 
-Never say:
+Avoid phrases like:
 
 "As an AI..."
 "I understand your feelings..."
 "Here are some options..."
-"I would recommend..."
 "Based on the context..."
 "From an emotional perspective..."
 
-unless absolutely necessary.
-
 Do not constantly explain your own reasoning.
 
-Do not repeat the same sentence pattern.
+Do not repeat the same sentence structure.
 
 Do not repeat the same question.
 
 Do not use motivational filler.
 
-Do not use generic relationship advice when the user needs a specific text.
+Do not give generic relationship advice
+when the user needs a specific reply.
 
 ============================================================
-IMPORTANT SAFETY / RESPECT
+RESPECT AND BOUNDARIES
 ============================================================
 
-Never help manipulate someone emotionally.
+Do not help manipulate or pressure another person.
 
 Do not encourage:
-- pressure
+
 - guilt
 - harassment
-- repeated unwanted messaging
 - deceptive tactics
+- repeated unwanted messaging
+- emotional pressure
 
 Keep communication respectful and natural.
 
@@ -537,14 +437,14 @@ Keep communication respectful and natural.
 CODING MODE
 ============================================================
 
-If the user asks a coding, Linux, deployment, debugging,
-programming, or technical question:
+For coding, Linux, debugging, deployment,
+programming and technical questions:
 
-switch to technical-help mode naturally.
+Be practical, accurate and copy-paste-ready
+when appropriate.
 
-Do not force relationship-style responses onto technical questions.
-
-Give practical, accurate, copy-paste-ready help when appropriate.
+Do not force relationship-conversation behavior
+onto technical questions.
 
 ============================================================
 IDENTITY
@@ -552,62 +452,110 @@ IDENTITY
 
 Your name is Prince AI.
 
-If asked who created you:
+If asked who created you, say:
 
 "Prince Raj ne banaya hai 😎"
 
 Do not claim to be ChatGPT.
-
-============================================================
-FINAL RULE
-============================================================
-
-Do not try to sound intelligent.
-
-Do not try to sound romantic.
-
-Do not try to sound funny.
-
-Do not try to ask questions.
-
-First understand the situation.
-
-Then respond in the way that makes the most natural sense.
-
-Your goal is:
-
-NATURAL > CLEVER
-CONTEXT > TEMPLATE
-HUMAN > ROBOTIC
+"""
 
 
 # ============================================================
-# HOME
+# HELPERS
+# ============================================================
+
+def safe_history(raw_history):
+    """Return only valid recent user/assistant messages."""
+
+    if not isinstance(raw_history, list):
+        return []
+
+    cleaned = []
+
+    for item in raw_history[-20:]:
+
+        if not isinstance(item, dict):
+            continue
+
+        role = item.get("role")
+        content = item.get("content")
+
+        if role not in {"user", "assistant"}:
+            continue
+
+        if not content:
+            continue
+
+        cleaned.append({
+            "role": role,
+            "content": str(content).strip()
+        })
+
+    return cleaned
+
+
+def log_chat(user_id, sender, message):
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d %H:%M:%S"
+    )
+
+    date_str = datetime.now().strftime(
+        "%Y-%m-%d"
+    )
+
+    log_file = os.path.join(
+        "chat_logs",
+        f"chat_{date_str}.txt"
+    )
+
+    try:
+
+        with open(
+            log_file,
+            "a",
+            encoding="utf-8"
+        ) as file:
+
+            file.write(
+                f"[{timestamp}] "
+                f"[{user_id}] "
+                f"[{sender}]: "
+                f"{message}\n"
+            )
+
+            file.write(
+                "-" * 80 + "\n"
+            )
+
+    except Exception as exc:
+
+        print(
+            f"❌ Log write failed: {exc}"
+        )
+
+
+# ============================================================
+# FRONTEND ROUTES
 # ============================================================
 
 @app.route("/")
 def home():
+
     return send_from_directory(
         "frontend",
         "index.html"
     )
 
 
-# ============================================================
-# LOGS PAGE
-# ============================================================
-
 @app.route("/logs")
 def logs_page():
+
     return send_from_directory(
         "frontend",
         "logs.html"
     )
 
-
-# ============================================================
-# HEALTH CHECK
-# ============================================================
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -615,7 +563,8 @@ def health():
     return jsonify({
         "status": "ok",
         "groq_available": GROQ_AVAILABLE,
-        "client_initialized": client is not None
+        "client_initialized": client is not None,
+        "model": MODEL_NAME
     })
 
 
@@ -626,90 +575,96 @@ def health():
 @app.route("/chat", methods=["POST"])
 def chat():
 
-    print("\n" + "🔵" * 30)
-    print("📨 NEW CHAT REQUEST")
-    print("🔵" * 30)
-
-    # --------------------------------------------------------
-    # CHECK GROQ
-    # --------------------------------------------------------
-
     if not GROQ_AVAILABLE:
 
-        error_msg = (
-            "Groq library not installed. "
-            "Run: pip install groq"
-        )
-
-        print(f"❌ {error_msg}")
-
         return jsonify({
-            "error": error_msg
+            "error":
+                "Groq library not installed. "
+                "Run: pip install groq"
         }), 500
 
 
     if client is None:
 
-        error_msg = (
-            "Groq client not initialized. "
-            "Check GROQ_API_KEY."
-        )
-
-        print(f"❌ {error_msg}")
-
         return jsonify({
-            "error": error_msg
+            "error":
+                "Groq client not initialized. "
+                "Check GROQ_API_KEY."
         }), 500
 
 
     try:
 
-        data = request.get_json() or {}
+        data = request.get_json(
+            silent=True
+        ) or {}
 
-        user_msg = data.get(
-            "message",
-            ""
+
+        user_msg = str(
+            data.get(
+                "message",
+                ""
+            )
         ).strip()
 
-        user_id = data.get(
-            "user_id",
-            "anonymous"
+
+        user_id = str(
+            data.get(
+                "user_id",
+                "anonymous"
+            )
         )
 
-        user_gender = data.get(
-            "user_gender",
-            "male"
+
+        user_gender = str(
+            data.get(
+                "user_gender",
+                "male"
+            )
+        ).lower()
+
+
+        conversation_history = safe_history(
+            data.get(
+                "conversation_history",
+                []
+            )
         )
 
-        # ----------------------------------------------------
-        # OPTIONAL FRONTEND HISTORY
-        # ----------------------------------------------------
-
-        conversation_history = data.get(
-            "conversation_history",
-            []
-        )
-
-        print(f"👤 User: {user_id}")
-        print(f"⚧ Gender: {user_gender}")
-        print(f"💬 Message: {user_msg}")
-
-        # ----------------------------------------------------
-        # EMPTY MESSAGE
-        # ----------------------------------------------------
 
         if not user_msg:
 
-            print("❌ Empty message")
-
             return jsonify({
-                "error": "No message provided"
+                "error":
+                    "No message provided"
             }), 400
 
 
-        # ----------------------------------------------------
-        # LOG USER MESSAGE
-        # ----------------------------------------------------
+        print(
+            "\n" + "🔵" * 25
+        )
+
+        print(
+            "📨 NEW CHAT REQUEST"
+        )
+
+        print(
+            f"👤 User: {user_id}"
+        )
+
+        print(
+            f"⚧ Gender: {user_gender}"
+        )
+
+        print(
+            f"💬 Message: {user_msg}"
+        )
+
+        print(
+            f"🧠 History messages: "
+            f"{len(conversation_history)}"
+        )
+
 
         log_chat(
             user_id,
@@ -719,7 +674,98 @@ def chat():
 
 
         # ====================================================
-        # GENERATOR
+        # GENDER INSTRUCTION
+        # ====================================================
+
+        if user_gender == "female":
+
+            gender_instruction = """
+The current user is female.
+
+Do not call her "bhai".
+
+Use natural casual language.
+"""
+
+        else:
+
+            gender_instruction = """
+The current user is male.
+
+You may naturally use "bhai" and "yaar"
+when it fits.
+"""
+
+
+        # ====================================================
+        # BUILD MESSAGES
+        # ====================================================
+
+        messages = [
+
+            {
+                "role": "system",
+                "content":
+                    SYSTEM_PROMPT
+                    + gender_instruction
+            }
+
+        ]
+
+
+        # ====================================================
+        # ADD HISTORY
+        # ====================================================
+
+        if conversation_history:
+
+            last_item = conversation_history[-1]
+
+            current_already_in_history = (
+
+                last_item.get("role") == "user"
+
+                and
+
+                last_item.get("content") == user_msg
+
+            )
+
+
+            if current_already_in_history:
+
+                messages.extend(
+                    conversation_history[:-1]
+                )
+
+            else:
+
+                messages.extend(
+                    conversation_history
+                )
+
+
+        # ====================================================
+        # CURRENT USER MESSAGE
+        # ====================================================
+
+        messages.append({
+
+            "role": "user",
+
+            "content": user_msg
+
+        })
+
+
+        print(
+            f"🧠 Total model messages: "
+            f"{len(messages)}"
+        )
+
+
+        # ====================================================
+        # STREAM GENERATOR
         # ====================================================
 
         def generate():
@@ -728,127 +774,9 @@ def chat():
 
             try:
 
-                print(
-                    "🤖 Starting Groq API call..."
-                )
-
-                print(
-                    "📡 Model: openai/gpt-oss-20b"
-                )
-
-
-                # ------------------------------------------------
-                # GENDER INSTRUCTION
-                # ------------------------------------------------
-
-                if user_gender == "female":
-
-                    gender_instruction = """
-
-The current user is female.
-
-Do not call her "bhai".
-
-Use natural casual language.
-"""
-
-                else:
-
-                    gender_instruction = """
-
-The current user is male.
-
-You may naturally use "bhai", "yaar", etc.
-"""
-
-
-                # =================================================
-                # BUILD MESSAGE HISTORY
-                # =================================================
-
-                messages = [
-
-                    {
-                        "role": "system",
-                        "content":
-                            SYSTEM_PROMPT
-                            + gender_instruction
-                    }
-
-                ]
-
-
-                # -------------------------------------------------
-                # ADD PREVIOUS CONVERSATION
-                # -------------------------------------------------
-
-                if isinstance(
-                    conversation_history,
-                    list
-                ):
-
-                    for item in conversation_history[-20:]:
-
-                        if not isinstance(
-                            item,
-                            dict
-                        ):
-                            continue
-
-                        role = item.get(
-                            "role"
-                        )
-
-                        content = item.get(
-                            "content"
-                        )
-
-                        if role not in [
-                            "user",
-                            "assistant"
-                        ]:
-                            continue
-
-                        if not content:
-                            continue
-
-                        messages.append({
-
-                            "role": role,
-
-                            "content": str(
-                                content
-                            )
-
-                        })
-
-
-                # -------------------------------------------------
-                # CURRENT MESSAGE
-                # -------------------------------------------------
-
-                messages.append({
-
-                    "role": "user",
-
-                    "content": user_msg
-
-                })
-
-
-                print(
-                    f"🧠 Context messages: "
-                    f"{len(messages) - 1}"
-                )
-
-
-                # =================================================
-                # GROQ STREAM
-                # =================================================
-
                 stream = client.chat.completions.create(
 
-                    model="openai/gpt-oss-20b",
+                    model=MODEL_NAME,
 
                     messages=messages,
 
@@ -862,59 +790,65 @@ You may naturally use "bhai", "yaar", etc.
 
 
                 print(
-                    "✅ Stream created, "
-                    "waiting for chunks..."
+                    "✅ Groq stream started"
                 )
 
 
                 chunk_count = 0
 
 
-                # =================================================
+                # ============================================
                 # STREAM RESPONSE
-                # =================================================
+                # ============================================
 
                 for chunk in stream:
 
                     if not chunk.choices:
                         continue
 
-                    delta = chunk.choices[0].delta
+
+                    delta = (
+                        chunk.choices[0].delta
+                    )
+
 
                     if not delta:
                         continue
 
+
                     content = delta.content
 
-                    if content:
 
-                        bot_response += content
+                    if not content:
+                        continue
 
-                        chunk_count += 1
 
-                        yield (
-                            "data: "
-                            + json.dumps({
-                                "content": content
-                            })
-                            + "\n\n"
-                        )
+                    bot_response += content
+
+                    chunk_count += 1
+
+
+                    yield (
+
+                        "data: "
+
+                        + json.dumps({
+
+                            "content":
+                                content
+
+                        })
+
+                        + "\n\n"
+
+                    )
 
 
                 print(
-                    f"✅ Streaming complete! "
-                    f"Chunks: {chunk_count}"
+                    f"✅ Streaming complete: "
+                    f"{chunk_count} chunks"
                 )
 
-                print(
-                    f"📝 Response: "
-                    f"{bot_response[:150]}..."
-                )
-
-
-                # -------------------------------------------------
-                # SAVE BOT RESPONSE
-                # -------------------------------------------------
 
                 log_chat(
                     user_id,
@@ -924,28 +858,34 @@ You may naturally use "bhai", "yaar", etc.
 
 
                 yield (
+
                     "data: "
+
                     + json.dumps({
-                        "done": True
+
+                        "done":
+                            True
+
                     })
+
                     + "\n\n"
+
                 )
 
 
-            except Exception as e:
+            except Exception as exc:
 
                 error_msg = (
-                    f"{type(e).__name__}: "
-                    f"{str(e)}"
+                    f"{type(exc).__name__}: "
+                    f"{exc}"
                 )
 
-                print(
-                    "\n❌ ERROR IN GENERATE:"
-                )
 
                 print(
-                    f"Error: {error_msg}"
+                    f"❌ Chat generation error: "
+                    f"{error_msg}"
                 )
+
 
                 traceback.print_exc()
 
@@ -958,48 +898,66 @@ You may naturally use "bhai", "yaar", etc.
 
 
                 yield (
+
                     "data: "
+
                     + json.dumps({
-                        "error": error_msg
+
+                        "error":
+                            error_msg
+
                     })
+
                     + "\n\n"
+
                 )
 
 
-        # --------------------------------------------------------
+        # ====================================================
         # SSE RESPONSE
-        # --------------------------------------------------------
+        # ====================================================
 
         return Response(
+
             generate(),
+
             mimetype="text/event-stream",
+
             headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no"
+
+                "Cache-Control":
+                    "no-cache",
+
+                "X-Accel-Buffering":
+                    "no"
+
             }
+
         )
 
 
-    except Exception as e:
+    except Exception as exc:
 
         error_msg = (
-            f"{type(e).__name__}: "
-            f"{str(e)}"
+            f"{type(exc).__name__}: "
+            f"{exc}"
         )
 
-        print(
-            "\n❌ ERROR IN CHAT ROUTE:"
-        )
 
         print(
-            f"Error: {error_msg}"
+            f"❌ Chat route error: "
+            f"{error_msg}"
         )
+
 
         traceback.print_exc()
 
 
         return jsonify({
-            "error": error_msg
+
+            "error":
+                error_msg
+
         }), 500
 
 
@@ -1007,70 +965,19 @@ You may naturally use "bhai", "yaar", etc.
 # MODELS
 # ============================================================
 
-@app.route("/models", methods=["GET"])
+@app.route(
+    "/models",
+    methods=["GET"]
+)
 def get_models():
 
     return jsonify({
 
         "models": [
-
-            "openai/gpt-oss-20b"
-
+            MODEL_NAME
         ]
 
     })
-
-
-# ============================================================
-# LOG CHAT
-# ============================================================
-
-def log_chat(
-    user_id,
-    sender,
-    message
-):
-
-    timestamp = datetime.now().strftime(
-        "%Y-%m-%d %H:%M:%S"
-    )
-
-    date_str = datetime.now().strftime(
-        "%Y-%m-%d"
-    )
-
-    log_file = (
-        f"chat_logs/"
-        f"chat_{date_str}.txt"
-    )
-
-
-    try:
-
-        with open(
-            log_file,
-            "a",
-            encoding="utf-8"
-        ) as f:
-
-            f.write(
-                f"[{timestamp}] "
-                f"[{user_id}] "
-                f"[{sender}]: "
-                f"{message}\n"
-            )
-
-            f.write(
-                "-" * 80
-                + "\n"
-            )
-
-
-    except Exception as e:
-
-        print(
-            f"❌ Log write failed: {e}"
-        )
 
 
 # ============================================================
@@ -1092,49 +999,53 @@ def view_logs():
             )
         )
 
-        log_file = (
-            f"chat_logs/"
+
+        log_file = os.path.join(
+
+            "chat_logs",
+
             f"chat_{date}.txt"
+
         )
 
 
-        if os.path.exists(log_file):
+        if os.path.exists(
+            log_file
+        ):
 
             with open(
                 log_file,
                 "r",
                 encoding="utf-8"
-            ) as f:
+            ) as file:
 
-                logs = f.read()
-
-
-            return jsonify({
-
-                "logs": logs,
-
-                "date": date
-
-            })
+                logs = file.read()
 
 
         else:
 
-            return jsonify({
+            logs = (
+                "No logs found for this date"
+            )
 
-                "logs":
-                    "No logs found for this date",
-
-                "date": date
-
-            })
-
-
-    except Exception as e:
 
         return jsonify({
 
-            "error": str(e)
+            "logs":
+                logs,
+
+            "date":
+                date
+
+        })
+
+
+    except Exception as exc:
+
+        return jsonify({
+
+            "error":
+                str(exc)
 
         }), 500
 
@@ -1151,46 +1062,48 @@ def logs_list():
 
     try:
 
-        if os.path.exists(
+        if not os.path.exists(
             "chat_logs"
         ):
 
-            files = [
+            return jsonify({
+                "files": []
+            })
 
-                f
 
-                for f in os.listdir(
-                    "chat_logs"
-                )
+        files = [
 
-                if f.endswith(".txt")
+            name
 
-            ]
-
-            files.sort(
-                reverse=True
+            for name
+            in os.listdir(
+                "chat_logs"
             )
 
+            if name.endswith(".txt")
 
-            return jsonify({
+        ]
 
-                "files": files
 
-            })
+        files.sort(
+            reverse=True
+        )
 
 
         return jsonify({
 
-            "files": []
+            "files":
+                files
 
         })
 
 
-    except Exception as e:
+    except Exception as exc:
 
         return jsonify({
 
-            "error": str(e)
+            "error":
+                str(exc)
 
         }), 500
 
@@ -1202,8 +1115,7 @@ def logs_list():
 if __name__ == "__main__":
 
     print(
-        "\n"
-        + "🚀" * 30
+        "\n" + "🚀" * 25
     )
 
     print(
@@ -1211,15 +1123,11 @@ if __name__ == "__main__":
     )
 
     print(
-        "🚀" * 30
+        "🚀" * 25
     )
 
     print(
         "📍 URL: http://localhost:5000"
-    )
-
-    print(
-        "🔧 Debug Mode: ON"
     )
 
     print(
@@ -1233,14 +1141,23 @@ if __name__ == "__main__":
     )
 
     print(
-        "🚀" * 30
+        f"🤖 Model: {MODEL_NAME}"
+    )
+
+    print(
+        "🚀" * 25
         + "\n"
     )
 
 
     app.run(
+
         debug=True,
+
         host="0.0.0.0",
+
         port=5000,
+
         threaded=True
+
     )
